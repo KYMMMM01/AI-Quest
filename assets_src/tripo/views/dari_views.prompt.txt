@@ -1,0 +1,13 @@
+Use your native image generation tool ($imagegen) to create exactly ONE image and save it as a PNG at:
+C:\Project\AI-Quest\assets_src\tripo\views\dari_views.png
+Do not draw it with code, PIL, SVG or any procedural method. Do not edit or overwrite any other file. If native image generation is unavailable, create no file and reply exactly: IMAGEGEN_UNAVAILABLE
+
+Character: Dari, the official mascot partner, a cute round orange squirrel (the attached image is the official 3D front render). Keep: big round head with round ears with white inner ear, three darker orange stripes on top of the head that continue over the top to the back of the head, white muzzle and cheeks area, white belly patch, short arms and legs, and a big fluffy orange tail with a white tip that rises up behind the body on the character's left side.
+The character wears a small simple dark brown rounded backpack on the back: the front render shows only its two dark brown shoulder straps; from the side the backpack is a thin rounded brown shape on the back, and from the back it is a simple plain rounded dark brown backpack with no logo, no pockets details, no zipper text, sitting between the shoulders above the tail.
+Layout: one landscape image 1536x1024 with exactly three equal panels side by side, all on the same flat plain light gray #E6E6E6 background (no gradient, no floor, no cast shadow, no frames, no text). Orthographic turnaround view of the SAME character at the SAME scale in every panel: the character's feet touch the same baseline near the bottom and the top of the head is at the same height in every panel, each panel shows the full body with margin, nothing cut off.
+Panel 1 (left): LEFT SIDE view, the camera looks at the character's left side, so the character faces toward the RIGHT edge of the image, exact 90 degree profile.
+Panel 2 (middle): BACK view, exactly from behind.
+Panel 3 (right): RIGHT SIDE view, the camera looks at the character's right side, so the character faces toward the LEFT edge of the image, exact 90 degree profile.
+Style: identical to the attached 3D render: soft 3D clay/vinyl toy render, matte material, soft even studio light, same colors and proportions. Neutral standing pose exactly like the front render (do not change the pose, no new expressions, no props). Strict: no text, no letters, no logos, no watermark, do not add any accessory that is not described.
+
+After saving, reply with the saved path and the image dimensions.

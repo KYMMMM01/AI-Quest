@@ -1,0 +1,8 @@
+Use your native image generation tool ($imagegen) to create exactly ONE image and save it as a PNG at:
+C:\Project\AI-Quest\assets_src\gen\bg_game.png
+Do not draw it with code, PIL, SVG or any procedural method. Do not edit or overwrite any other file. If native image generation is unavailable, create no file and reply exactly: IMAGEGEN_UNAVAILABLE
+
+Art direction (apply strictly): soft 3D clay render, matte clay material, rounded chunky shapes, soft studio lighting, gentle soft shadows, bright pastel palette with a clean blue accent (#1F4E9E), friendly and cheerful, same look as the attached reference images (official mascots and an approved style test). Strict rules: no text, no letters, no numbers, no logos, no watermarks, no signatures, no frames or borders, nothing cut off at the edges, do not draw the mascots unless asked, do not imitate any existing game's art.
+Image: 1536x1024 landscape background for the main play screen. A bright, clean, modern public-office workspace seen from a slightly elevated front angle, softly blurred (shallow depth of field) so UI can sit on top: light blue and cream walls, a large window with sky, a few plants, shelves. Keep the large central area and the bottom area calm and low-detail. No people, no screens with content.
+
+After saving, reply with the saved path and the image dimensions.

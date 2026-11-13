@@ -1,0 +1,13 @@
+Use your native image generation tool ($imagegen) to create exactly ONE image and save it as a PNG at:
+C:\Project\AI-Quest\assets_src\tripo\views\narumi_views.png
+Do not draw it with code, PIL, SVG or any procedural method. Do not edit or overwrite any other file. If native image generation is unavailable, create no file and reply exactly: IMAGEGEN_UNAVAILABLE
+
+Character: Narumi, the official mascot of a Korean public agency, a round white stork-like bird (first attached image is the official 3D front render; the other attached line drawings are the official 2D turnaround, use them ONLY for the shape of the back and side: the large egg-shaped white head, the curled feather crest at the top back of the head, the white tail feather with black tip sticking out at the back, black wing tips, orange feet).
+Light-blue transparent goggles wrap around the face only at the front (from the side the goggle band is visible at the side of the head; from the back no goggle strap unless the 2D drawing shows one, it does not). Red scarf knotted at the character's left front of the neck, the red band visible all around the neck from the back.
+Layout: one landscape image 1536x1024 with exactly three equal panels side by side, all on the same flat plain light gray #E6E6E6 background (no gradient, no floor, no cast shadow, no frames, no text). Orthographic turnaround view of the SAME character at the SAME scale in every panel: the character's feet touch the same baseline near the bottom and the top of the head is at the same height in every panel, each panel shows the full body with margin, nothing cut off.
+Panel 1 (left): LEFT SIDE view, the camera looks at the character's left side, so the character faces toward the RIGHT edge of the image, exact 90 degree profile.
+Panel 2 (middle): BACK view, exactly from behind.
+Panel 3 (right): RIGHT SIDE view, the camera looks at the character's right side, so the character faces toward the LEFT edge of the image, exact 90 degree profile.
+Style: identical to the attached 3D render: soft 3D clay/vinyl toy render, matte material, soft even studio light, same colors and proportions. Neutral standing pose exactly like the front render (do not change the pose, no new expressions, no props). Strict: no text, no letters, no logos, no watermark, do not add any accessory that is not described.
+
+After saving, reply with the saved path and the image dimensions.

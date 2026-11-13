@@ -1,0 +1,12 @@
+Use your native image generation tool ($imagegen) to create exactly ONE image and save it as a PNG at:
+C:\Project\AI-Quest\assets_src\gen\delivery_pair.png
+Do not draw it with code, PIL, SVG or any procedural method. Do not edit or overwrite any other file. If native image generation is unavailable, create no file and reply exactly: IMAGEGEN_UNAVAILABLE
+
+Art direction (apply strictly): soft 3D clay render, matte clay material, rounded chunky shapes, soft studio lighting, gentle soft shadows, bright pastel palette with a clean blue accent (#1F4E9E), friendly and cheerful, same look as the attached reference images (official mascots and an approved style test). Strict rules: no text, no letters, no numbers, no logos, no watermarks, no signatures, no frames or borders, nothing cut off at the edges, do not draw the mascots unless asked, do not imitate any existing game's art.
+Layout: one landscape image 1536x1024, split into exactly two equal side-by-side panels with a thin white gap between them. Each panel must fill the full image height (no empty white bands above or below). Both panels use the exact same camera angle and composition; only the described differences change.
+Subject: delivery inspection scenes. In each panel, one closed cardboard delivery box sits on the floor at the lower-left area, turned so a LARGE BLANK WHITE SQUARE LABEL on its front faces the camera directly; the blank label must be flat, clearly visible, about one fifth of the panel height, and completely empty (no marks). The right half of each panel's floor is left open and empty (an item will be placed there later).
+LEFT panel: an elementary school hallway with lockers and children's drawings shapes (no text).
+RIGHT panel: a public health center room with a bed and a white cabinet.
+These two panels are different rooms, but the box is at the same position and size in both.
+
+After saving, reply with the saved path and the image dimensions.

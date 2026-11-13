@@ -1,0 +1,13 @@
+Use your native image generation tool ($imagegen) to create exactly ONE image, then save it as a PNG file at:
+C:\Project\AI-Quest\assets_src\style_test\style_test_office_pair.png
+Do not draw it with code, PIL, SVG, or any procedural method. If native image generation is unavailable, do not create any file and reply exactly: IMAGEGEN_UNAVAILABLE
+
+Purpose: style test for a bright, friendly Korean public-procurement educational web game. The attached image shows the official mascots (a white stork with goggles and red scarf, an orange squirrel with a backpack). Match their soft 3D clay render look: rounded shapes, matte clay material, soft studio lighting, gentle shadows, pastel colors with a clean blue accent (#1F4E9E-ish).
+
+Composition: one landscape image, 1536x1024 if possible, split into two equal side-by-side panels with a small white gap, same camera angle (slightly elevated front view of a small office room) in both panels:
+- LEFT panel: a busy, tidy small-company office. Two desks with computers, shelves with binders, a potted plant, warm light, a window. Feels active and trustworthy. No people needed.
+- RIGHT panel: the SAME room but empty and abandoned. Bare desks or no desks, very visible big dust clouds and large cobwebs in the corners, and a large blank paper sign taped to the wall covering about a quarter of the panel (the sign must be blank, no letters). The emptiness must be obvious even when the image is shrunk to a thumbnail.
+
+Strict rules: no text, no letters, no numbers, no logos, no watermarks, no frames, no people, no mascots in the image. Nothing cut off at the edges. Do not reproduce any existing game's art style.
+
+After saving, reply with the saved path and the image dimensions.

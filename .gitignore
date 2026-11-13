@@ -1,0 +1,27 @@
+# 의존성과 빌드 결과(웹 게시는 GitHub Actions 가 빌드한다)
+node_modules/
+game/dist/
+game/tools/out/
+
+# 검수용 사진, GIF, 검토 페이지
+output/
+
+# 원본 3D 모델(파일 하나가 60MB 안팎). 게임은 assets_src/tripo/lod 의 줄인 모델과 assets_src/rig 의 리깅 파일만 쓴다
+assets_src/tripo/*.glb
+assets_src/tripo/work/
+assets_src/rig/render/
+assets_src/rig/clips_preview/
+
+# 생성 도구 로그(대화 기록과 내부 경로가 들어 있다)
+assets_src/gen/*.log.jsonl
+assets_src/gen/*.last.txt
+assets_src/tripo/views/*.log.jsonl
+assets_src/tripo/views/*.last.txt
+assets_src/style_test/codex_log.jsonl
+assets_src/style_test/codex_last.txt
+
+# 편집기, 운영체제
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini

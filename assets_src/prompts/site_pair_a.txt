@@ -1,0 +1,11 @@
+Use your native image generation tool ($imagegen) to create exactly ONE image and save it as a PNG at:
+C:\Project\AI-Quest\assets_src\gen\site_pair_a.png
+Do not draw it with code, PIL, SVG or any procedural method. Do not edit or overwrite any other file. If native image generation is unavailable, create no file and reply exactly: IMAGEGEN_UNAVAILABLE
+
+Art direction (apply strictly): soft 3D clay render, matte clay material, rounded chunky shapes, soft studio lighting, gentle soft shadows, bright pastel palette with a clean blue accent (#1F4E9E), friendly and cheerful, same look as the attached reference images (official mascots and an approved style test). Strict rules: no text, no letters, no numbers, no logos, no watermarks, no signatures, no frames or borders, nothing cut off at the edges, do not draw the mascots unless asked, do not imitate any existing game's art.
+Layout: one landscape image 1536x1024, split into exactly two equal side-by-side panels with a thin white gap between them. Each panel must fill the full image height (no empty white bands above or below). Both panels use the exact same camera angle and composition; only the described differences change.
+Subject: a construction site of a small public library building, clay style. One clay construction worker stands large in the center foreground on a raised scaffold platform, facing the camera.
+LEFT panel (safe): the worker wears a bright fluorescent orange hard hat and a safety vest, the scaffold has yellow guardrails, safety net on the building.
+RIGHT panel (unsafe): identical scene, but the worker has NO hard hat (bare head with dark hair, clearly visible), no vest, and the scaffold edge has NO guardrail. The missing hard hat must be obvious even as a tiny thumbnail.
+
+After saving, reply with the saved path and the image dimensions.

@@ -1,0 +1,11 @@
+Use your native image generation tool ($imagegen) to create exactly ONE image and save it as a PNG at:
+C:\Project\AI-Quest\assets_src\gen\office_pair_b.png
+Do not draw it with code, PIL, SVG or any procedural method. Do not edit or overwrite any other file. If native image generation is unavailable, create no file and reply exactly: IMAGEGEN_UNAVAILABLE
+
+Art direction (apply strictly): soft 3D clay render, matte clay material, rounded chunky shapes, soft studio lighting, gentle soft shadows, bright pastel palette with a clean blue accent (#1F4E9E), friendly and cheerful, same look as the attached reference images (official mascots and an approved style test). Strict rules: no text, no letters, no numbers, no logos, no watermarks, no signatures, no frames or borders, nothing cut off at the edges, do not draw the mascots unless asked, do not imitate any existing game's art.
+Layout: one landscape image 1536x1024, split into exactly two equal side-by-side panels with a thin white gap between them. Each panel must fill the full image height (no empty white bands above or below). Both panels use the exact same camera angle and composition; only the described differences change.
+Subject: a small company's office room, different from the reference style test (different furniture layout and colors: mint green and cream).
+LEFT panel: busy and tidy, a long shared desk with two laptops, a whiteboard with blank colored sticky notes, a shelf of boxes and binders, plants, warm light. Active and trustworthy. No people.
+RIGHT panel: the same room empty and abandoned: bare desk, empty shelf, very large obvious cobwebs in the corners, big grey dust clouds on the floor, and a large blank paper sign taped to the wall covering about a quarter of the panel (the sign is blank, no letters). The emptiness must be obvious even as a tiny thumbnail.
+
+After saving, reply with the saved path and the image dimensions.
