@@ -6,6 +6,7 @@ import * as D from './data'
 const all = new Set<string>([
   'assets/narumi.webp',
   'assets/dari.webp',
+  'favicon.png',
   'assets/img/bg_title.webp',
   'assets/img/bg_game.webp',
   'assets/img/ladder.webp',
