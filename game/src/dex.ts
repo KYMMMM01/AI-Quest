@@ -1,61 +1,61 @@
-// --- 정책 도감(10장)과 만든 사람 화면. 도감 카드는 게임에서 처음 만나면 열린다 ---
+// --- 규칙 수첩(10쪽)과 만든 사람 화면. 수첩 쪽은 게임에서 처음 만나면 열린다 ---
 import { audio } from './audio'
 import { load, save } from './storage'
+import { RULES, MARKS, LADDER, LADDER_INFO, type RuleId } from './data'
 
 const img = (n: string) => `assets/img/${n}.webp`
 
-interface Entry {
+interface Page {
   id: string
   title: string
   pic: string
+  rule: string // 규칙이나 뜻 한 줄
   easy: string
   real: string
+  src: string
 }
 
-// 수치는 넣지 않고 방향만 쓴다(조달청 원문으로 확인한 수치만 화면에 쓴다는 기획서 8장 원칙)
-export const DEX: Entry[] = [
-  { id: 'ghost', title: '유령기업 의심', pic: img('office_a_empty'),
-    easy: '일하는 사무실도 사람도 없이 서류만 있는 회사예요. 낙찰되면 물건을 제대로 만들 수 없어요.',
-    real: '일하는 곳이 없는 회사는 입찰보증금 부과 대상이 될 수 있어요.' },
-  { id: 'spec', title: '규격 다름', pic: img('item_ext_nosticker'),
-    easy: '주문한 것과 다른 물건이 오면 학교나 보건소가 제대로 쓸 수 없어요.',
-    real: '납품된 물건을 점검해 규격과 다르면 다시 납품받고, 반복되면 계약이 해지될 수 있어요.' },
-  { id: 'box', title: '남의 상자', pic: img('delivery_school'),
-    easy: '직접 만들기로 약속한 회사가 남의 물건을 가져오면 안 돼요.',
-    real: '계약을 이행할 때 직접 만들었는지 점검해요(직접생산확인은 중소벤처기업부 소관).' },
-  { id: 'collusion', title: '담합 징후', pic: img('build_library'),
-    easy: '업체끼리 가격을 미리 맞추면 공정한 경쟁이 사라져요.',
-    real: '직접 조사해 입찰을 제한하고 부당이득을 환수해요. 심하면 공정위 고발을 요청해요.' },
-  { id: 'safety', title: '안전 소홀 기록', pic: img('site_a_unsafe'),
-    easy: '안전모 없이 일하는 현장은 사고가 나기 쉬워요.',
-    real: '안전 사고 기록이 있는 업체는 심사에서 감점을 받아 낙찰이 어려워져요.' },
-  { id: 'innovation', title: '혁신제품', pic: img('mark_innovation'),
-    easy: '새로운 기술로 만든 제품이에요.',
-    real: '혁신제품으로 지정되면 공공기관이 시범구매로 첫 구매자가 되어 판로를 열어 줘요.' },
-  { id: 'green', title: '녹색제품', pic: img('mark_green'),
+const RULE_PICS: Record<RuleId, string> = {
+  ghost: img('office_a_empty'), spec: img('item_ext_nosticker'), box: img('delivery_school'), collusion: img('build_library'), safety: img('site_a_unsafe'),
+}
+
+// 수치는 넣지 않고 공식 자료로 확인한 방향만 쓴다
+export const DEX: Page[] = [
+  ...(Object.keys(RULES) as RuleId[]).map((id) => ({
+    id, title: RULES[id].name, pic: RULE_PICS[id], rule: RULES[id].rule, easy: RULES[id].why, real: RULES[id].action, src: RULES[id].src,
+  })),
+  { id: 'price', title: '낙찰은 값만 보지 않아요', pic: img('stamp_pass'), rule: '값이 낮은 회사부터 서류를 보고, 기준에 맞으면 낙찰',
+    easy: '제일 싸게 써낸 회사라도 일을 해낼 수 있는지 먼저 확인해요.',
+    real: '적격심사와 종합심사낙찰제는 가격뿐 아니라 일할 능력, 안전, 사회적 책임도 봐요.', src: '정책브리핑 조달청 자료' },
+  { id: 'innovation', title: MARKS.innovation.name, pic: MARKS.innovation.img, rule: MARKS.innovation.desc,
+    easy: '새 기술로 만든 제품이에요.',
+    real: '혁신제품으로 지정되면 공공기관이 시범구매로 첫 구매자가 되어 판로를 열어 줘요.', src: '2026년 조달청 업무계획' },
+  { id: 'green', title: MARKS.green.name, pic: MARKS.green.img, rule: MARKS.green.desc,
     easy: '환경을 생각해 만든 제품이에요.',
-    real: '공공기관은 녹색제품을 우선 구매해야 해요.' },
-  { id: 'safetymark', title: '안전인증', pic: img('mark_safety'),
-    easy: '안전 관리 인증을 받은 업체예요.',
-    real: '안전보건경영시스템 인증이 있는 업체는 심사에서 가점을 받아요.' },
-  { id: 'scan', title: '나르미 스캔', pic: 'assets/narumi.webp',
-    easy: '게임 속 연습용 AI예요. 빠르지만 가끔 틀려요.',
-    real: '공공조달 업무에 AI 지원을 도입하고 있어요. AI는 돕고, 최종 판단은 사람이 해요.' },
-  { id: 'ladder', title: '성장사다리', pic: img('ladder'),
-    easy: '공정한 심사를 통과한 성실한 기업은 공공시장에서 자라요.',
-    real: '벤처나라, 혁신제품, 우수조달을 거쳐 해외 조달시장 진출까지 성장을 지원해요.' },
+    real: '공공기관은 녹색제품을 먼저 사야 해요. 조달청은 공공 장터의 친환경 기준을 운영해요.', src: '녹색제품 구매촉진 법령, 조달청 자료' },
+  { id: 'scan', title: '나르미 스캔', pic: 'assets/narumi.webp', rule: '나르미가 수상한 곳을 짚어 줘요',
+    easy: '하루에 세 번 쓸 수 있어요. 나르미도 가끔 잘못 보니까 동그라미 친 곳을 기준표와 한 번 더 맞춰 봐요.',
+    real: '조달청은 AI 같은 새 기술 제품을 공공기관이 먼저 사서 써 볼 수 있게 도와요.', src: '2026년 조달청 업무계획' },
+  { id: 'ladder', title: '성장사다리', pic: img('ladder'), rule: LADDER.join(', '),
+    easy: '공정한 심사를 통과한 성실한 회사는 공공시장에서 자라요.',
+    real: `${LADDER_INFO[0]}. 이어서 다수공급자계약과 우수조달물품으로 더 큰 시장에 나가고, 해외로도 뻗어 가요.`, src: '2016년 벤처나라 개통 브리핑' },
 ]
 
 const KEY = 'dex'
 const opened = new Set<string>((load(KEY) ?? '').split(',').filter(Boolean))
 
-export function unlock(id: string): void {
-  if (opened.has(id) || !DEX.some((d) => d.id === id)) return
+export function unlock(id: string): boolean {
+  if (opened.has(id) || !DEX.some((d) => d.id === id)) return false
   opened.add(id)
   save(KEY, [...opened].join(','))
+  return true
 }
 export function dexCount(): number {
   return DEX.filter((d) => opened.has(d.id)).length
+}
+export function resetDex(): void {
+  opened.clear()
+  save(KEY, '')
 }
 
 function h(html: string): HTMLElement {
@@ -64,48 +64,54 @@ function h(html: string): HTMLElement {
   return t.content.firstElementChild as HTMLElement
 }
 
-function overlay(root: HTMLElement, inner: string, cls: string): HTMLElement {
-  const el = h(`<div class="overlay ${cls}"><div class="panel book">${inner}<button class="gbtn green mid close" data-act="close">닫기</button></div></div>`)
+export function overlay(root: HTMLElement, title: string, inner: string, cls: string, onClose?: () => void): HTMLElement {
+  const el = h(`<div class="overlay ${cls}"><div class="panel sheet">
+    <div class="plate"><h2>${title}</h2></div>
+    <button class="ibtn close" data-act="close" aria-label="닫기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/></svg></button>
+    <div class="sheet-paper">${inner}</div></div></div>`)
   ;(el.querySelector('[data-act="close"]') as HTMLButtonElement).onclick = () => {
-    audio.play('click')
+    audio.play('back')
     el.remove()
+    onClose?.()
   }
   root.append(el)
-  audio.play('click')
+  audio.play('open')
   return el
 }
 
-export function showDex(root: HTMLElement): void {
-  const cards = DEX.map((d) =>
-    opened.has(d.id)
-      ? `<div class="dex-card"><img src="${d.pic}" alt="" /><h4>${d.title}</h4><p>${d.easy}</p><p class="real"><b>실제 조달청은</b> ${d.real}</p></div>`
-      : `<div class="dex-card locked"><div class="q">?</div><h4>아직 못 만났어요</h4><p>게임에서 만나면 열려요</p></div>`,
-  ).join('')
-  const el = overlay(root, `<div class="ribbon outline">정책 도감 ${dexCount()} / ${DEX.length}</div>
-    <div class="dex-view"><div class="dex-grid">${cards}</div></div>
-    <div class="dex-nav"><button class="ibtn blue small" data-act="prev" aria-label="이전">&lt;</button><span class="dex-page"></span><button class="ibtn blue small" data-act="next" aria-label="다음">&gt;</button></div>
-    <p class="book-note">게임 점수와 마크 점수는 실제 심사 점수와 다릅니다. 실제 절차를 쉽게 줄여 보여 줍니다.</p>`, 'dex')
-  // 작은 화면에서는 세 장씩 넘겨 본다(큰 화면에서는 넘김 버튼을 숨긴다)
-  const grid = el.querySelector('.dex-grid') as HTMLElement
-  const pageEl = el.querySelector('.dex-page') as HTMLElement
-  const per = 3
-  const pages = Math.ceil(DEX.length / per)
-  let page = 0
-  const go = (d: number) => {
-    page = Math.max(0, Math.min(pages - 1, page + d))
-    const first = grid.children[0] as HTMLElement
-    const step = first.offsetWidth + 24
-    grid.style.transform = `translateX(${-page * per * step}px)`
-    pageEl.textContent = `${page + 1} / ${pages}`
+// 수첩: 왼쪽 목차, 오른쪽 한 쪽. 열린 쪽만 읽을 수 있다
+export function showDex(root: HTMLElement, onClose?: () => void, focus?: string): void {
+  const first = focus && opened.has(focus) ? focus : DEX.find((d) => opened.has(d.id))?.id
+  const el = overlay(root, `규칙 수첩 <small>${dexCount()} / ${DEX.length}쪽</small>`, `<div class="note">
+      <div class="leaf left"><p class="leaf-title">차례</p><ol class="note-index">${DEX.map((d, i) => `<li><button class="note-tab${opened.has(d.id) ? '' : ' locked'}" data-id="${d.id}"><span class="pg">${i + 1}</span>${opened.has(d.id) ? d.title : '아직 빈 쪽'}</button></li>`).join('')}</ol></div>
+      <div class="leaf right"><article class="note-page"></article></div>
+    </div>`, 'dex', onClose)
+  const page = el.querySelector('.note-page') as HTMLElement
+  let shown: string | undefined
+  const show = (id?: string) => {
+    if (shown !== undefined && id !== shown) {
+      // 오른쪽 쪽이 왼쪽 접힌 곳을 축으로 넘어간다
+      page.classList.remove('flip')
+      void page.offsetWidth
+      page.classList.add('flip')
+      audio.play('page')
+    }
+    shown = id
+    el.querySelectorAll('.note-tab').forEach((b) => b.classList.toggle('on', (b as HTMLElement).dataset.id === id))
+    const d = DEX.find((x) => x.id === id)
+    if (!d || !opened.has(d.id)) {
+      page.innerHTML = `<div class="note-empty"><b>아직 빈 쪽이에요</b><p>게임에서 이 규칙을 만나면 나르미가 적어 둬요.</p></div>`
+      return
+    }
+    page.innerHTML = `<img src="${d.pic}" alt="" /><h3>${d.title}</h3><p class="n-rule">${d.rule}</p><p>${d.easy}</p>
+      <div class="n-real"><b>실제 조달청은</b><p>${d.real}</p><small>출처: ${d.src}</small></div>`
   }
-  ;(el.querySelector('[data-act="prev"]') as HTMLButtonElement).onclick = () => (audio.play('click'), go(-1))
-  ;(el.querySelector('[data-act="next"]') as HTMLButtonElement).onclick = () => (audio.play('click'), go(1))
-  go(0)
+  el.querySelectorAll<HTMLButtonElement>('.note-tab').forEach((b) => (b.onclick = () => show(b.dataset.id)))
+  show(first)
 }
 
 export function showCredits(root: HTMLElement): void {
-  overlay(root, `<div class="ribbon outline">만든 사람</div>
-    <div class="credits">
+  overlay(root, '만든 사람', `<div class="credits">
       <p class="c-lead">2026 조달청 AI 게임 콘텐츠 공모전 출품작 <b>나르미의 입찰 도장</b></p>
       <dl>
         <dt>기획, 개발</dt><dd>출품자 1인</dd>
@@ -114,12 +120,13 @@ export function showCredits(root: HTMLElement): void {
         <dd>조달청 정책 조사, 기획 검토, 게임 코드: Claude(Anthropic)<br>
           배경과 사진, 아이콘, 로고 그림: Codex 이미지 생성(OpenAI)<br>
           캐릭터 3D 모델: Tripo, 자동 리깅: Meshy(Higgsfield)<br>
-          효과음: Mirelo, 배경음: ElevenLabs Music(Higgsfield)<br>
+          효과음: ElevenLabs Sound Effects(전체 14가지)<br>
+          배경음: ElevenLabs Music(Higgsfield)<br>
           캐릭터 동작 키와 렌더: Blender, 사람이 직접 다듬음</dd>
+        <dt>정책 자료</dt><dd>대한민국 정책브리핑의 조달청 자료, 국가법령정보센터</dd>
         <dt>글꼴</dt><dd>Pretendard(SIL Open Font License 1.1)</dd>
       </dl>
-      <p class="c-note">등장 업체와 금액은 모두 가상이며 실제 기업과 관계가 없습니다.
-        게임은 실제 조달 절차를 쉽게 줄여 보여 줍니다. 실제로는 여러 서류와 점수를 함께 보고, 담합은 가격 외의 여러 증거로 조사하며,
-        입찰보증금과 안전 감점은 금액과 점수로 처리됩니다. 게임 점수는 실제 심사 점수와 다릅니다.</p>
+      <p class="c-note">등장 업체와 금액은 모두 가상이며 실제 기업과 관계가 없습니다. 게임은 실제 조달 절차를 쉽게 줄여 보여 줍니다.
+        실제로는 여러 서류와 점수를 함께 보고, 담합은 가격 말고도 여러 증거로 조사합니다. 게임 점수와 우대 마크 점수는 실제 심사 점수와 다릅니다.</p>
     </div>`, 'credits-ov')
 }

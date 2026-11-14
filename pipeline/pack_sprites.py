@@ -7,7 +7,7 @@ CLIPS = os.path.join(ROOT, 'assets_src', 'rig', 'clips')
 OUT = os.path.join(ROOT, 'game', 'public', 'assets', 'sprite')
 TS = os.path.join(ROOT, 'game', 'src', 'sprite-data.ts')
 META = {'narumi_idle': (15, True), 'narumi_stamp': (30, False), 'narumi_happy': (30, False), 'narumi_no': (30, False),
-        'dari_idle': (15, True), 'dari_run': (30, True), 'dari_happy': (30, False)}
+        'dari_idle': (15, True), 'dari_run': (30, True), 'dari_happy': (30, False), 'dari_sad': (30, False), 'dari_cheer': (30, False)}
 
 os.makedirs(OUT, exist_ok=True)
 info = {}
