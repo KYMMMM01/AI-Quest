@@ -13,8 +13,8 @@ assets_src/rig/render/
 assets_src/rig/clips_preview/
 
 # 생성 도구 로그(대화 기록과 내부 경로가 들어 있다)
-assets_src/gen/*.log.jsonl
-assets_src/gen/*.last.txt
+assets_src/gen/**/*.log.jsonl
+assets_src/gen/**/*.last.txt
 assets_src/tripo/views/*.log.jsonl
 assets_src/tripo/views/*.last.txt
 assets_src/style_test/codex_log.jsonl
