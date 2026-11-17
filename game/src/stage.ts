@@ -19,4 +19,12 @@ export function setupStage(stage: HTMLElement, notice: HTMLElement, onPortrait: 
   window.visualViewport?.addEventListener('resize', fit)
   window.addEventListener('orientationchange', fit)
   fit()
+  // 화면이 16:9 보다 넓으면 남는 양옆에 맨 위 장면의 배경 그림을 흐리게 깐다(style.css 의 #viewport::before).
+  // 일시정지나 설정 창은 장면 위에 붙으므로 창이 아니라 마지막 장면의 그림을 쓴다
+  const viewport = stage.parentElement as HTMLElement
+  new MutationObserver(() => {
+    const scenes = stage.querySelectorAll(':scope > .scene')
+    const bg = scenes[scenes.length - 1]?.querySelector<HTMLImageElement>(':scope > img.bg')
+    viewport.style.setProperty('--side-bg', bg ? `url("${bg.src}")` : 'none')
+  }).observe(stage, { childList: true })
 }

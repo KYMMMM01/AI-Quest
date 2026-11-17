@@ -1,5 +1,5 @@
 // --- 게임 시간. requestAnimationFrame 누적 시간이며 멈춤 사유가 하나라도 있으면 흐르지 않는다 ---
-export type PauseReason = 'user' | 'portrait' | 'note'
+export type PauseReason = 'user' | 'portrait' | 'note' | 'press' // press: 손가락 누름 뒤 튕김을 보여 주는 동안(press.ts)
 
 type TickFn = (dtMs: number) => void
 
