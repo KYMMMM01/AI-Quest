@@ -78,6 +78,15 @@ body {
   overflow: hidden;
   touch-action: none;
 }
+/* 휴대폰처럼 화면이 16:9 보다 넓을 때 남는 양옆 띠를 지금 장면의 배경으로 흐리게 채운다(그림은 stage.ts 가 정한다) */
+#viewport::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--side-bg, none) center / cover no-repeat;
+  filter: blur(8px) brightness(0.68) saturate(1.1);
+  transform: scale(1.1);
+}
 #stage {
   position: absolute;
   left: 0;
@@ -88,6 +97,7 @@ body {
   overflow: hidden;
   overflow: clip;
   background: var(--paper);
+  box-shadow: 0 0 22px 6px rgba(0, 0, 0, 0.5);
 }
 #rotate-notice {
   position: fixed;
@@ -236,6 +246,44 @@ p {
 .ibtn:active {
   transform: translateY(4px);
   box-shadow: 0 2px 0 var(--ink);
+}
+/* 손가락으로 누를 때(press.ts). 무대가 작게 줄어도 손가락 둘레로 보이게 크게 눌리고, 뗄 때 튕겨 오른다.
+   transform 과 겹치지 않게 scale 속성을 쓴다 */
+button.tpress {
+  scale: 0.92;
+  filter: brightness(0.8);
+}
+button.trel {
+  animation: trel 0.16s ease-out;
+}
+@keyframes trel {
+  0% {
+    scale: 0.92;
+  }
+  60% {
+    scale: 1.06;
+  }
+}
+/* 누른 자리에서 퍼지는 동그라미. 무대 밖(body)에 붙어 화면 크기 그대로 그린다 */
+.tap-ring {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border: 3px solid var(--yellow);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(30, 45, 74, 0.6);
+  pointer-events: none;
+  z-index: 1000;
+  animation: tap-ring 0.4s ease-out forwards;
+}
+@keyframes tap-ring {
+  to {
+    transform: scale(5.5);
+    opacity: 0;
+  }
 }
 .ibtn.close {
   background: var(--red);

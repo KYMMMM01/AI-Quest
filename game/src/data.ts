@@ -91,7 +91,7 @@ export const RULES: Record<RuleId, Rule> = {
     rule: '실제로 일하는 사무실이 있어야 해요',
     check: '업체 사무실 사진',
     why: '일하는 곳도 사람도 없이 서류만 있는 회사가 뽑히면 물건이 오지 않아요.',
-    action: '거짓 서류로 입찰한 회사는 한동안 나라 입찰에 나오지 못하게 막아요. 입찰만 하고 일은 남에게 넘기는 브로커성 입찰도 막고 있어요.',
+    action: '거짓 서류로 입찰한 회사는 한동안 나라 입찰에 나오지 못하게 막아요. 입찰만 하고 일은 남에게 넘기는 회사(브로커)도 막고 있어요.',
     src: '국가계약법 시행령 제76조, 2026년 조달청 업무계획',
     guide: '사무실이 텅 비었어요. 기준표와 달라요! 왼쪽으로 밀어 정밀 확인해요',
   },
@@ -111,17 +111,17 @@ export const RULES: Record<RuleId, Rule> = {
     rule: '상자의 회사가 계약한 회사와 같아야 해요',
     check: '상자에 붙은 로고',
     why: '직접 만들기로 약속한 회사가 남이 만든 완제품을 가져오면 안 돼요.',
-    action: '직접 만들기로 해 놓고 남의 완제품을 사다 팔면 입찰에 못 나오게 막고, 그렇게 번 돈을 돌려내게 해요.',
+    action: '직접 만들기로 해 놓고 남이 다 만든 물건을 사다 팔면 입찰에 못 나오게 막고, 그렇게 번 돈을 돌려내게 해요.',
     src: '조달청 직접생산 위반 조사 보도자료(2025년 3월)',
     guide: '상자의 로고가 계약 회사와 달라요! 왼쪽으로 밀어요',
   },
   collusion: {
-    name: '가격 미리 맞추기(담합) 징후',
+    name: '가격 미리 맞추기(담합) 의심',
     short: '가격이 똑같아요',
     rule: '다른 회사와 가격이 똑같으면 미리 짰는지 확인해요',
     check: '입찰 가격',
-    why: '회사끼리 가격을 미리 맞추면 공정한 경쟁이 사라져요. 정말 짰는지는 조사로 확인해요.',
-    action: '담합이 드러나면 입찰에 못 나오게 막고, 심하면 공정거래위원회에 고발을 요청해요. 나라장터는 입찰을 열면 모든 가격을 공개해요.',
+    why: '회사끼리 가격을 미리 맞추면 공정한 경쟁이 사라져요. 정말 짰는지는 정밀 확인으로 알아봐요.',
+    action: '담합이 드러나면 입찰에 못 나오게 막고, 공정거래위원회가 조사할 수 있게 알려요. 나라장터는 입찰을 열면 모든 가격을 공개해요.',
     src: '국가계약법 시행령 제76조, 조달청과 공정위 고발요청 협약',
     guide: '두 회사 가격이 똑같아요. 미리 짠 것 같아요! 왼쪽으로 밀어요',
   },
@@ -131,7 +131,7 @@ export const RULES: Record<RuleId, Rule> = {
     rule: '지난 공사 현장이 안전해야 해요(안전모와 난간)',
     check: '지난 공사 현장 사진',
     why: '안전을 소홀히 한 회사가 공사를 맡으면 사고가 날 수 있어요. 안전모 그림은 게임 속 표시예요.',
-    action: '중대재해를 낸 회사는 낙찰받기 어렵도록 심사 기준을 강화하고 있어요.',
+    action: '큰 사고(중대재해)를 낸 회사는 공사를 따내기 어렵게 심사 기준을 높이고 있어요.',
     src: '2026년 조달청 업무계획',
     guide: '지난 현장에 안전모와 난간이 없어요! 왼쪽으로 밀어요',
   },
@@ -168,7 +168,7 @@ export const FAST_MS = 2000 // 이보다 빨리 맞히면 빠른 판정 점수
 // 성장사다리: 2016년 벤처나라 개통 브리핑의 설명(벤처나라, 다수공급자계약과 우수조달제품, 해외시장)
 export const LADDER = ['벤처나라', '다수공급자계약', '우수조달물품', '해외 진출']
 export const LADDER_INFO = [
-  '처음 공공시장에 들어온 회사는 벤처나라에서 첫 판로를 열어요',
+  '처음 공공시장에 들어온 회사는 벤처나라에서 처음 물건을 팔기 시작해요',
   '믿을 만한 회사는 나라장터 쇼핑몰(다수공급자계약)에서 여러 기관에 팔아요',
   '기술과 품질이 좋은 중소기업 제품은 우수조달물품으로 지정받아요',
   '공공조달에서 쌓은 실적으로 다른 나라 정부에도 팔아요',
@@ -191,20 +191,23 @@ export function josa(word: string, withB: string, without: string): string {
 const iga = (w: string) => w + josa(w, '이', '가')
 const gwa = (w: string) => w + josa(w, '과', '와')
 
-export function letterFor(kind: LetterKind, rule: RuleId | null, company: string, agency: AgencyId, what: string, mark?: MarkId): Letter {
+export function letterFor(kind: LetterKind, rule: RuleId | null, company: string, agency: AgencyId, what: string, stage: DayDef['kind'], mark?: MarkId): Letter {
   const ag = AGENCIES[agency]
   const probe = { from: '불공정 조달 조사', fromImg: img('tray_investigate') }
+  const work = what.endsWith('공사') // 3일차 시설공사는 물건이 아니라 공사라서 납품, 받음 대신 다른 말을 쓴다
   if (kind === 'waited') {
-    return { from: company, fromImg: '', body: `정밀 확인 결과 이상이 없었습니다. 확인을 기다리는 동안 ${what} 납품이 조금 늦어졌습니다. 양해 부탁드립니다.`,
+    return { from: company, fromImg: '', body: `정밀 확인 결과 이상이 없었습니다. 확인을 기다리는 동안 ${what} ${work ? '일정' : '납품'}이 조금 늦어졌습니다. 양해 부탁드립니다.`,
       lesson: '정밀 확인은 탈락이 아니라 서류를 한 번 더 살피는 절차예요. 기준과 맞으면 통과시켜요.' }
   }
   if (kind === 'good') {
-    if (mark) {
-      return { from: ag.name, fromImg: ag.img, body: `${company}의 ${what}, 잘 받았습니다. ${MARKS[mark].name}이라서 더욱 반가웠습니다.`,
-        lesson: mark === 'innovation' ? '혁신제품은 나라가 첫 구매자가 되어 판로를 열어 줘요.' : '공공기관은 녹색제품을 먼저 사야 해요.' }
+    const thanks = work ? `${what}${josa(what, '을', '를')} ${company}에 맡기게 되어 든든합니다.` : `${company}의 ${what}, 잘 받았습니다.`
+    // 우대 마크는 물건 이야기라서 공사 편지에는 마크 문장과 마크 메모를 쓰지 않는다
+    if (mark && !work) {
+      return { from: ag.name, fromImg: ag.img, body: `${thanks} ${MARKS[mark].name}이라서 더욱 반가웠습니다.`,
+        lesson: mark === 'innovation' ? '혁신제품은 나라가 첫 손님이 되어 팔 길을 열어 줘요.' : '공공기관은 녹색제품을 먼저 사야 해요.' }
     }
-    return { from: ag.name, fromImg: ag.img, body: `${company}의 ${what}, 잘 받았습니다. 공정하게 심사해 주셔서 감사합니다.`,
-      lesson: '값이 낮은 회사부터 서류를 확인해 기준에 맞으면 낙찰돼요.' }
+    return { from: ag.name, fromImg: ag.img, body: `${thanks} 공정하게 심사해 주셔서 감사합니다.`,
+      lesson: stage === 'delivery' ? '도착한 물건이 주문서와 같으면 합격이에요.' : '값이 낮은 회사부터 서류를 확인해 기준에 맞으면 낙찰돼요.' }
   }
   const r = RULES[rule!]
   if (kind === 'caught') {

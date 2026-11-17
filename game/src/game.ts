@@ -7,6 +7,7 @@ import { ICON } from './icons'
 import { Sprite } from './sprite'
 import * as D from './data'
 import { unlock, showDex, dexCount, DEX } from './dex'
+import { prefs } from './settings'
 
 type Dir = 'pass' | 'check'
 type DemoAct = { cap?: string; wait: number; dir: Dir; scan?: number }
@@ -99,7 +100,9 @@ export function startGame(o: GameOptions): () => void {
     t.innerHTML = html.trim()
     return t.content.firstElementChild as HTMLElement
   }
-  const daySeconds = () => D.STAGE_SECONDS * (o.easy ? 4 / 3 : 1)
+  // 여유 모드. 게임 중에 바꾸면 '다시 하기'와 '오늘 다시 하기'부터 적용한다(설정 창의 "다음 판부터 적용돼요")
+  let easy = o.easy
+  const daySeconds = () => D.STAGE_SECONDS * (easy ? 4 / 3 : 1)
 
   // --- 전체 기록 ---
   const run = {
@@ -191,7 +194,7 @@ export function startGame(o: GameOptions): () => void {
   let coachWait: ((d: Dir) => void) | null = null
   const timers: { t: number; fn: () => void }[] = []
   const after = (ms: number, fn: () => void) => timers.push({ t: ms, fn })
-  const maxHearts = () => (o.easy ? 5 : 3)
+  const maxHearts = () => (easy ? 5 : 3)
   const isGuide = () => card?.guide !== undefined
 
   const updateQa = () => {
@@ -577,7 +580,7 @@ export function startGame(o: GameOptions): () => void {
       after(500, () => {
         phase = 'msg'
         ring(PHOTO.x + c.scanned!.x, PHOTO.y + c.scanned!.y, 'empty', '문제 없음')
-        say('앗, 제가 잘못 봤어요! 동그라미 친 곳은 기준과 같아요. 기준표와 직접 맞춰 봐 주세요.', 999999)
+        say('앗, 제가 잘못 봤어요! 동그라미 친 곳은 기준과 같아요.', 999999)
         audio.play('wrong')
         narumi.play('narumi_no')
         const b = h('<button class="btn green again" data-act="again">다시 판정하기</button>')
@@ -606,7 +609,7 @@ export function startGame(o: GameOptions): () => void {
       combo++
       let gain = 100
       if (cardElapsed < D.FAST_MS) { gain += 50; toast('빠른 판정 +50', 'fast', 900) }
-      if (dir === 'pass' && c.marks.length) { gain += 50 * c.marks.length; toast(`우대 제품 +${50 * c.marks.length}`, 'mark', 1000) }
+      if (dir === 'pass' && c.marks.length) { gain += 50 * c.marks.length; toast(`우대 마크 +${50 * c.marks.length}`, 'mark', 1000) }
       run.score += gain
       after(110, () => audio.play('correct'))
       cheer()
@@ -647,7 +650,7 @@ export function startGame(o: GameOptions): () => void {
       board.querySelector(`li[data-rule="${c.clue}"]`)?.classList.add('flash')
     }
     const title = ok ? '이 회사는 기준에 맞았어요' : `${idx + 1}번 기준과 달랐어요`
-    const body = ok ? '기준표의 모든 줄과 같으면 통과시켜야 해요. 정밀 확인 때문에 이 회사의 심사가 늦어졌어요.' : `${r!.rule}. ${r!.why}`
+    const body = ok ? '기준표의 모든 줄과 같으면 통과시켜야 해요. 정밀 확인으로 잘못 넘기면 그만큼 회사의 심사가 늦어져요.' : `${r!.rule}. ${r!.why}`
     const why = h(`<div class="why panel"><div><h4>${title}</h4><p>${body}</p></div><button class="btn s" data-act="ok">알겠어요</button></div>`)
     el.append(why)
     let done = false
@@ -683,7 +686,7 @@ export function startGame(o: GameOptions): () => void {
     } else if (notice && def.kind === 'bid') {
       notice.state[notice.idx] = 'check'
       notice.idx++
-      if (notice.idx >= notice.bidders.length) toast('모든 회사가 정밀 확인 대상이라 공고를 다시 올려요', '', 1300)
+      if (notice.idx >= notice.bidders.length) toast('이 공고는 모두 정밀 확인했어요. 다음 공고로 넘어가요', '', 1300)
     }
     drawBoard()
     if (ic) exitCard(ic, dir)
@@ -924,8 +927,8 @@ export function startGame(o: GameOptions): () => void {
       { sel: '.card-slot', t: '가운데는 회사가 낸 <b>서류</b>예요. 노란 번호 <b>1</b>이 기준표 1번 줄과 짝이에요. 사무실 사진이 기준과 같죠?', act: () => linkRule('ghost', true) },
       { sel: '.card-slot', t: '기준과 같으면 카드를 <b>오른쪽</b>으로 밀어 통과! 직접 해 봐요. 아래 통과 버튼을 눌러도 돼요.', wait: 'pass' },
       { sel: '.card-slot', t: '이번 사무실은 텅 비었어요. 기준과 다르면 <b>왼쪽</b>으로 밀어 정밀 확인!', act: () => { present(practice(false)); linkRule('ghost', false) }, wait: 'check' },
-      { sel: '.hud-l', t: '하루 심사 시간은 45초예요. 틀려도 시간이 멈추고 이유를 알려 줘요.' },
-      { sel: '.hud-r', t: '하트는 실수할 수 있는 횟수예요. 책 버튼은 <b>규칙 수첩</b>이고, 펴는 동안 시간이 멈춰요.' },
+      { sel: '.hud-l', t: '하루 심사 시간은 45초예요. 틀리면 이유를 알려 주고, 그동안 시간은 멈춰요.' },
+      { sel: '.hud-r', t: '하트는 남은 기회예요. 틀릴 때마다 하나씩 줄어요. 책 버튼을 누르면 <b>규칙 수첩</b>이 열리고, 보는 동안 시간이 멈춰요.' },
       { sel: '.scan-btn', t: '<b>스캔</b>을 누르면 제가 돋보기로 수상한 곳에 동그라미를 쳐 드려요. 하루 세 번 쓸 수 있어요. 저도 가끔 잘못 보니까 기준표와 꼭 맞춰 봐 주세요.' },
       { t: '이제 첫 출근이에요. 하루가 끝나면 심사관님의 판정이 편지로 돌아와요!' },
     ]
@@ -1039,7 +1042,7 @@ export function startGame(o: GameOptions): () => void {
       collusion: ['<span class="mini-chips big"><i style="background:#ffd23f">72억</i><i style="background:#8ec9ff">75억</i></span>', '<span class="mini-chips big"><i style="background:#ffd23f">72억</i><i style="background:#ffd23f">72억</i></span>'],
       safety: [`<img src="${D.BUILDS[0].safe}" alt="" />`, `<img src="${D.BUILDS[0].unsafe}" alt="" />`],
     }
-    const extra = def.no === 1 ? `<div class="brief-tip"><b>심사 순서</b> 값이 낮은 회사부터 서류를 보고, 기준에 맞는 첫 회사가 낙찰돼요. 낙찰은 값만 보지 않아요.</div>` : ''
+    const extra = def.no === 1 ? `<div class="brief-tip"><b>심사 순서</b> 값이 낮은 회사부터 서류를 봐요. 기준에 맞는 첫 회사가 일을 따내요(낙찰).</div>` : ''
     const rules = def.rules.map((r) => {
       const R = D.RULES[r]
       const n = def.board.indexOf(r) + 1
@@ -1060,7 +1063,7 @@ export function startGame(o: GameOptions): () => void {
     const go = () => {
       audio.play('click')
       ov.remove()
-      if (added) toast(`수첩에 새 규칙 ${added}개를 적었어요`, 'note', 1600)
+      if (added) toast('규칙 수첩에 새 내용이 생겼어요', 'note', 1600)
       nextCard()
     }
     ;(ov.querySelector('[data-act="go"]') as HTMLButtonElement).onclick = go
@@ -1079,7 +1082,7 @@ export function startGame(o: GameOptions): () => void {
       const key = kind + l.clue
       if (used.has(key) || out.length >= 3) return
       used.add(key)
-      const L = D.letterFor(kind, l.clue === 'none' ? null : (l.clue as D.RuleId), l.card.company.name, l.card.agency, l.card.what, l.card.marks[0])
+      const L = D.letterFor(kind, l.clue === 'none' ? null : (l.clue as D.RuleId), l.card.company.name, l.card.agency, l.card.what, def.kind, l.card.marks[0])
       if (!L.fromImg) L.fromImg = l.card.company.logo
       out.push(L)
     }
@@ -1160,12 +1163,12 @@ export function startGame(o: GameOptions): () => void {
       ? '<li><b>기준에 맞는 회사</b><span>기준표의 모든 줄과 같으면 통과시켜요.</span></li>'
       : `<li><b>${D.RULES[m as D.RuleId].name}</b><span>${D.RULES[m as D.RuleId].rule}.</span></li>`).join('')
     const ov = h(`<div class="overlay gameover"><div class="panel sheet">
-      <div class="plate"><h2>${def.no}일차 심사 중단 <small>하트를 모두 썼어요</small></h2></div>
+      <div class="plate"><h2>${def.no}일차 심사 중단 <small>하트를 모두 잃었어요</small></h2></div>
       <div class="sheet-paper"><div class="sheet-body go-body">
         <div class="res-left"><div class="go-hearts">${Array.from({ length: maxHearts() }, () => `<span>${ICON.heart}</span>`).join('')}</div>
           <p class="r-main">맞게 판정 <b>${ok}</b> / ${n}장</p><p class="r-sub">오늘 심사는 여기까지예요</p></div>
         <div class="go-right"><h4>다시 볼 규칙</h4><ul class="go-rules">${rows}</ul>
-          <p class="go-tip">다시 하면 오늘 출근부터 새로 시작해요. 헷갈리면 규칙 수첩을 펴 보세요.</p></div>
+          <p class="go-tip">다시 하면 오늘 출근부터 새로 시작해요. 헷갈리면 규칙 수첩을 열어 봐요.</p></div>
       </div>
       <div class="sheet-foot"><button class="btn paper" data-act="home">${ICON.home}타이틀</button><button class="btn paper" data-act="dex">${ICON.book}수첩</button><button class="btn green" data-act="retry">오늘 다시 하기</button></div></div>
     </div></div>`)
@@ -1188,6 +1191,7 @@ export function startGame(o: GameOptions): () => void {
       run.missed.length = dayStart.missed
       run.waited = dayStart.waited
       run.delivered = { ...dayStart.delivered }
+      easy = prefs.easy
       startStage(stageIdx)
     }
     updateQa()
@@ -1201,12 +1205,12 @@ export function startGame(o: GameOptions): () => void {
     const level = acc >= 0.95 ? 3 : acc >= 0.85 ? 2 : acc >= 0.7 ? 1 : 0
     const sum = run.stars.reduce((a, b) => a + b, 0)
     const badge = sum >= 7 ? 3 : sum >= 4 ? 2 : 1
-    const parts = (Object.keys(run.delivered) as D.AgencyId[]).filter((a) => run.delivered[a] > 0).map((a) => `${D.AGENCIES[a].name} ${run.delivered[a]}곳`)
-    const headline = parts.length ? `사흘 동안 ${parts.join(', ')}에 필요한 것이 공정하게 전해졌어요` : '사흘 심사를 마쳤어요. 다음엔 더 꼼꼼히!'
+    const parts = (Object.keys(run.delivered) as D.AgencyId[]).filter((a) => run.delivered[a] > 0).map((a) => `${D.AGENCIES[a].name} 주문 ${run.delivered[a]}건`)
+    const headline = parts.length ? `사흘 동안 ${parts.join(', ')}이 공정하게 처리됐어요` : '사흘 심사를 마쳤어요. 다음엔 더 꼼꼼히!'
     const counts = new Map<D.Clue, number>()
     run.missed.forEach((m) => counts.set(m, (counts.get(m) ?? 0) + 1))
     const worst = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] as D.RuleId | undefined
-    const policy = worst ? { tag: '다음에는 이 규칙을 꼭 살펴봐요', t: D.RULES[worst].name, d: D.RULES[worst].action } : { tag: '성실한 회사의 다음 칸', t: D.LADDER[level], d: D.LADDER_INFO[level] }
+    const policy = worst ? { tag: '자주 놓친 규칙이에요', t: D.RULES[worst].name, d: D.RULES[worst].action } : { tag: '성실한 회사의 다음 칸', t: D.LADDER[level], d: D.LADDER_INFO[level] }
     unlock('ladder')
     // 계단 칸 윗면 가운데(달이 발 위치)와 앞면 이름표 위치. ladder.webp 를 900x600 으로 줄여 잰 값
     const steps = [
@@ -1258,7 +1262,7 @@ export function startGame(o: GameOptions): () => void {
     ;(s.querySelector('[data-act="again"]') as HTMLButtonElement).onclick = () => {
       audio.play('click')
       dispose()
-      startGame({ ...o, tutorial: false })
+      startGame({ ...o, easy: prefs.easy, tutorial: false })
     }
     ;(s.querySelector('[data-act="home"]') as HTMLButtonElement).onclick = () => {
       audio.play('click')

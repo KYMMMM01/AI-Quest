@@ -52,7 +52,17 @@ function showLoading(): { fill: HTMLElement; ready: () => Promise<void> } {
       ;(el.querySelector('.bar') as HTMLElement).hidden = true
       ;(el.querySelector('.tip') as HTMLElement).outerHTML = '<p class="tap">화면을 눌러 시작하세요</p>'
       qa.scene = 'tap'
-      el.addEventListener('pointerdown', async () => {
+      el.addEventListener('pointerdown', async (e) => {
+        // 휴대폰은 이 첫 누름에 전체 화면과 가로 고정으로 바꿔 주소줄과 아래 단추줄 자리까지 쓴다. 지원하지 않으면(아이폰 사파리 등) 그대로 둔다.
+        // 손가락은 뗄 때(pointerup)부터 사용자 조작으로 인정되므로 그때 요청한다
+        const root = document.documentElement
+        if (e.pointerType !== 'mouse' && matchMedia('(pointer: coarse)').matches && root.requestFullscreen && !document.fullscreenElement) {
+          document.addEventListener('pointerup', () => {
+            root.requestFullscreen({ navigationUI: 'hide' })
+              .then(() => (screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> }).lock?.('landscape'))
+              .catch(() => {})
+          }, { once: true, capture: true })
+        }
         await audio.unlock()
         audio.play('click')
         done()
@@ -113,13 +123,13 @@ function showTitle(): void {
 
 // --- 게임 방법: 어떤 게임인지와 하는 법을 네 장으로. 끝에서 직접 해 보기(튜토리얼)로 이어진다 ---
 const HOW = [
-  { h: '조달청은 나라 기관의<br>장바구니예요', p: '학교, 소방서, 보건소, 구청이 필요한 물건과 공사를 조달청이 대신 사 줘요. 조달 규모가 한 해 약 225조 원이라서 공정하게 고르는 일이 중요해요(2026년 조달청 업무계획).',
+  { h: '조달청은 나라 기관의<br>장바구니예요', p: '학교, 소방서, 보건소, 구청에 필요한 물건과 공사를 조달청이 계약해 줘요. 우리나라 공공조달은 한 해 약 225조 원 규모라서 공정하게 고르는 일이 중요해요(2026년 조달청 업무계획).',
     pic: (Object.keys(D.AGENCIES) as D.AgencyId[]).map((a) => `<img src="${D.AGENCIES[a].img}" alt="" />`).join('') },
   { h: '심사관님은 서류를<br>살피는 일을 해요', p: '회사가 낸 서류를 오늘의 기준표와 맞춰 봐요. 기준과 맞으면 통과, 다르면 정밀 확인으로 한 번 더 살펴봐요. 정책을 몰라도 기준표만 보면 풀 수 있어요.',
     pic: `<img class="big" src="${D.OFFICES_OK[1]}" alt="" /><span class="stack"><img src="assets/img/stamp_pass.webp" alt="" /><img src="assets/img/stamp_check.webp" alt="" /></span>` },
-  { h: '하루는 출근, 심사,<br>편지 순서예요', p: '출근하면 새 규칙을 하나씩 배우고, 45초 동안 서류를 심사해요. 퇴근할 때는 심사 결과가 학교나 회사가 보낸 편지로 돌아와요. 사흘을 마치면 성실한 회사가 성장사다리를 올라요.',
+  { h: '하루는 출근, 심사,<br>편지 순서예요', p: '출근하면 그날의 새 규칙을 배우고, 45초 동안 서류를 심사해요. 퇴근할 때는 심사 결과가 학교나 회사가 보낸 편지로 돌아와요. 사흘을 마치면 성실한 회사가 성장사다리를 올라요.',
     pic: `<img class="big" src="assets/img/ladder.webp" alt="" />` },
-  { h: '밀어서 도장 쾅!', p: '카드를 오른쪽으로 밀면 통과, 왼쪽으로 밀면 정밀 확인이에요. 아래 버튼이나 방향키로도 할 수 있어요. 헷갈리면 규칙 수첩을 펼치거나 나르미 스캔을 써 봐요. 수첩을 펴면 시간이 멈춰요.',
+  { h: '밀어서 도장 쾅!', p: '카드를 오른쪽으로 밀면 통과, 왼쪽으로 밀면 정밀 확인이에요. 아래 버튼이나 방향키로도 할 수 있어요. 헷갈리면 규칙 수첩이나 나르미 스캔을 써 봐요. 수첩을 보는 동안 시간이 멈춰요.',
     pic: `<img src="assets/img/stamp_check.webp" alt="" /><img class="big" src="${D.OFFICES_EMPTY[0]}" alt="" />` },
 ]
 function showHowTo(root: HTMLElement): void {
