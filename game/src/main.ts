@@ -1,6 +1,6 @@
 // --- 진입점. 로딩과 누르면 시작, 타이틀, 게임 방법, 플레이 자리, 일시정지 ---
 import './style.css'
-import { setupStage } from './stage'
+import { setupStage, requestLandscape } from './stage'
 import { clock } from './clock'
 import { audio } from './audio'
 import { preloadImages } from './assets'
@@ -55,13 +55,8 @@ function showLoading(): { fill: HTMLElement; ready: () => Promise<void> } {
       el.addEventListener('pointerdown', async (e) => {
         // 휴대폰은 이 첫 누름에 전체 화면과 가로 고정으로 바꿔 주소줄과 아래 단추줄 자리까지 쓴다. 지원하지 않으면(아이폰 사파리 등) 그대로 둔다.
         // 손가락은 뗄 때(pointerup)부터 사용자 조작으로 인정되므로 그때 요청한다
-        const root = document.documentElement
-        if (e.pointerType !== 'mouse' && matchMedia('(pointer: coarse)').matches && root.requestFullscreen && !document.fullscreenElement) {
-          document.addEventListener('pointerup', () => {
-            root.requestFullscreen({ navigationUI: 'hide' })
-              .then(() => (screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> }).lock?.('landscape'))
-              .catch(() => {})
-          }, { once: true, capture: true })
+        if (e.pointerType !== 'mouse' && matchMedia('(pointer: coarse)').matches && !document.fullscreenElement) {
+          document.addEventListener('pointerup', () => void requestLandscape(), { once: true, capture: true })
         }
         await audio.unlock()
         audio.play('click')

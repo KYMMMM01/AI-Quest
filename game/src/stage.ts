@@ -2,7 +2,33 @@
 export const STAGE_W = 1920
 export const STAGE_H = 1080
 
+// 전체 화면과 가로 고정을 요청한다. 손가락을 뗄 때(사용자 조작으로 인정될 때) 불러야 한다.
+// 전체 화면을 지원하지 않으면(아이폰 사파리 등) 아무 일도 없다. 가로 고정까지 되면 true
+export function requestLandscape(): Promise<boolean> {
+  const root = document.documentElement
+  if (!root.requestFullscreen) return Promise.resolve(false)
+  const orientation = screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> }
+  return (document.fullscreenElement ? Promise.resolve() : root.requestFullscreen({ navigationUI: 'hide' }))
+    .then(() => orientation?.lock?.('landscape') ?? Promise.reject())
+    .then(() => true, () => false)
+}
+
 export function setupStage(stage: HTMLElement, notice: HTMLElement, onPortrait: (portrait: boolean) => void): void {
+  // 휴대폰에서 전체 화면과 방향 고정을 쓸 수 있으면 세로 안내를 누르는 것만으로 가로로 바꾼다. 가로 고정이 안 되면 원래 안내로 돌린다
+  const canLock = typeof (screen.orientation as ScreenOrientation & { lock?: unknown })?.lock === 'function'
+  if (matchMedia('(pointer: coarse)').matches && !!document.documentElement.requestFullscreen && canLock) {
+    const text = notice.querySelector('p') as HTMLElement
+    text.textContent = '화면을 누르면 가로로 바뀌어요'
+    let busy = false // 빠르게 두 번 눌러도 요청은 한 번만
+    notice.addEventListener('pointerup', () => {
+      if (busy) return
+      busy = true
+      requestLandscape().then((ok) => {
+        busy = false
+        if (!ok) text.textContent = '가로로 돌려 주세요'
+      })
+    })
+  }
   const fit = () => {
     const vv = window.visualViewport
     const w = vv ? vv.width : window.innerWidth
