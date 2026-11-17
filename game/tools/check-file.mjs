@@ -20,6 +20,8 @@ const check = (browser, name, ok, detail = '') => {
 for (const channel of ['chrome', 'msedge']) {
   const browser = await chromium.launch({ channel, headless: true })
   const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } })
+  // 튜토리얼은 본 것으로 두고 브리핑과 시범 카드부터 점검한다(튜토리얼은 playtest 가 본다)
+  await page.addInitScript(() => localStorage.setItem('tut', '1'))
   const errors = []
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()))
   page.on('pageerror', (e) => errors.push(String(e)))
@@ -31,28 +33,40 @@ for (const channel of ['chrome', 'msedge']) {
   check(channel, '그림 로딩', failed.length === 0, failed.join(', '))
   const fontOk = await page.evaluate(() => document.fonts.check('700 40px Pretendard') && document.fonts.check('900 40px Pretendard'))
   check(channel, 'Pretendard 글꼴 적용', fontOk)
+  // 화면을 한 번 눌러 소리를 켜고 타이틀로 간다
+  await page.waitForFunction(() => window.__qa.scene === 'tap', null, { timeout: 15000 })
+  await page.mouse.click(960, 540)
+  await page.waitForFunction(() => window.__qa.scene === 'title')
+  await wait(1500) // 간판 등장 움직임이 끝난 뒤 찍는다
+  await page.screenshot({ path: path.join(outDir, `${channel}-title.png`) })
   const imgs = await page.evaluate(() => [...document.images].map((i) => [i.getAttribute('src'), i.naturalWidth]))
   check(channel, '타이틀 그림 표시', imgs.length > 0 && imgs.every(([, w]) => w > 0), JSON.stringify(imgs))
-  await wait(1500) // 로고 등장 움직임이 끝난 뒤 찍는다
-  await page.screenshot({ path: path.join(outDir, `${channel}-title.png`) })
+  const ta = await page.evaluate(() => window.__qa.audio())
+  check(channel, '타이틀 배경음 재생', ta.bgm === 'title', JSON.stringify(ta))
 
-  // 시작 버튼은 계속 숨쉬듯 움직이므로 안정 대기 없이 누른다
+  // 메뉴 간판은 살짝 흔들리므로 안정 대기 없이 누른다
   await page.click('[data-act="start"]', { force: true })
   await page.waitForFunction(() => window.__qa.scene === 'play')
+  await wait(300)
   const a = await page.evaluate(() => window.__qa.audio())
-  check(channel, '소리 디코딩과 재생 상태', a.state === 'running' && a.decoded === 8, JSON.stringify(a))
+  check(channel, '소리 디코딩과 플레이 배경음', a.state === 'running' && a.decoded === 14 && a.bgm === 'play', JSON.stringify(a))
 
-  // 단계 소개와 안내 카드 동안은 단계 시간이 멈춘다. 안내 카드 두 장(통과, 정밀 확인)을 넘긴 뒤 잰다
+  // 브리핑과 시범 카드 동안은 하루 시간이 멈춘다. 시범 카드 두 장(통과, 정밀 확인)을 넘긴 뒤 잰다
   const phase = () => page.evaluate(() => window.__qa.play && window.__qa.play.phase)
+  await page.waitForFunction(() => window.__qa.play && window.__qa.play.phase === 'brief', null, { timeout: 10000 })
+  const tb = await page.evaluate(() => window.__qa.timeLeft)
+  await wait(600)
+  check(channel, '브리핑 동안 시간 멈춤', (await page.evaluate(() => window.__qa.timeLeft)) === tb)
+  await page.click('.brief [data-act="go"]', { force: true })
   for (const key of ['ArrowRight', 'ArrowLeft']) {
     await page.waitForFunction(() => window.__qa.play && window.__qa.play.phase === 'guide', null, { timeout: 10000 })
     await page.keyboard.press(key)
     await page.waitForFunction(() => window.__qa.play.phase !== 'guide', null, { timeout: 5000 })
   }
   await page.waitForFunction(() => window.__qa.play.phase === 'card', null, { timeout: 8000 })
-  check(channel, '안내 카드 두 장 뒤 심사 시작', (await phase()) === 'card')
+  check(channel, '시범 카드 두 장 뒤 심사 시작', (await phase()) === 'card')
   await page.waitForTimeout(400)
-  await page.click('[data-act="scan"]', { timeout: 3000 }).catch(() => {})
+  await page.click('[data-act="scan"]', { timeout: 3000, force: true }).catch(() => {})
   await page.waitForTimeout(300)
   check(channel, '마우스로 스캔 버튼 누르기', await page.evaluate(() => window.__qa.play.scanned))
   // 화면 숫자는 10초 이상이면 정수라 짧은 간격의 변화가 안 보이므로 남은 시간(ms) 값을 직접 읽는다
@@ -71,7 +85,7 @@ for (const channel of ['chrome', 'msedge']) {
   check(channel, '창 비활성 시 자동 일시정지', scene === 'pause' && p0 === p1, `${scene} ${p0} => ${p1}`)
   await page.screenshot({ path: path.join(outDir, `${channel}-pause.png`) })
 
-  await page.click('[data-act="resume"]', { force: true })
+  await page.click('.pause [data-act="resume"]', { force: true })
   const r0 = await t()
   await wait(600)
   check(channel, '계속하기 뒤 타이머 재개', (await t()) < r0)

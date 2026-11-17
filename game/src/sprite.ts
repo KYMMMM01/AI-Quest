@@ -31,6 +31,10 @@ export class Sprite {
     this.apply()
   }
 
+  get width(): number {
+    return parseFloat(this.el.style.width)
+  }
+
   dispose(): void {
     this.stop()
   }

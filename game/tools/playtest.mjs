@@ -1,5 +1,6 @@
-// --- 끝까지 자동 플레이 점검(file://, Chrome). 카드 단서를 읽어 대부분 맞게, 일부러 몇 번 틀리게 판정한다 ---
-// 확인: 안내 카드, 단서별 카드, 강제 스캔과 다시 판정, 하트 소진과 도움 모드, 단계 결과 3번, 최종 결과, 콘솔 오류 0
+// --- 끝까지 자동 플레이 점검(file://, Chrome). 튜토리얼부터 최종 결과까지 새 흐름을 그대로 밟는다 ---
+// 확인: 누르면 시작, 튜토리얼 연습 카드 두 장, 브리핑 세 번(시간 멈춤), 시범 카드, 틀렸을 때 이유 상자(시간 멈춤),
+//       강제 스캔과 다시 판정, 하루 정산 편지, 최종 결과, 수첩이 채워짐, 콘솔 오류 0
 import { chromium } from 'playwright-core'
 import { pathToFileURL, fileURLToPath } from 'node:url'
 import { mkdirSync } from 'node:fs'
@@ -23,50 +24,72 @@ const errors = []
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()))
 page.on('pageerror', (e) => errors.push(String(e)))
 page.on('requestfailed', (r) => errors.push('requestfailed ' + r.url()))
+const shot = (n) => page.screenshot({ path: path.join(outDir, `${n}.png`) })
+const qa = () => page.evaluate(() => ({ scene: window.__qa.scene, p: window.__qa.play, t: window.__qa.timeLeft }))
+
 await page.goto(url)
-await page.waitForFunction(() => window.__qa && window.__qa.boot === 'ready', null, { timeout: 20000 })
+await page.waitForFunction(() => window.__qa && window.__qa.scene === 'tap', null, { timeout: 20000 })
+await page.mouse.click(960, 540)
+await page.waitForFunction(() => window.__qa.scene === 'title')
+await wait(1200) // 간판이 내려오는 움직임이 끝난 뒤 누른다
 await page.click('[data-act="start"]', { force: true })
 
-const shots = new Set()
-const shot = async (name) => {
-  if (shots.has(name)) return
-  shots.add(name)
-  await page.screenshot({ path: path.join(outDir, `${name}.png`) })
+// 튜토리얼: 다음 버튼을 누르고, 연습 카드는 바라는 방향으로 민다
+let practiced = 0
+for (let i = 0; i < 20; i++) {
+  await wait(700)
+  if (!(await page.$('.coach'))) break
+  const s = await qa()
+  const next = await page.$('.coach [data-act="cnext"]:not([hidden])')
+  if (next) { await next.click({ force: true }); continue }
+  if (s.p?.coach) {
+    await page.keyboard.press(s.p.coach === 'pass' ? 'ArrowRight' : 'ArrowLeft')
+    practiced++
+    await wait(900)
+  }
 }
-const seen = { guide: 0, results: 0, forced: false, rejudged: false, help: false, scanned: false, clues: new Set() }
-let lastCardKey = ''
-let wrongPlan = { 1: 1, 3: 3 } // 1단계 1번, 3단계 3번 일부러 틀린다(3단계는 하트 소진 확인)
-const t0 = Date.now()
+check('튜토리얼 연습 카드 두 장', practiced === 2, String(practiced))
+check('튜토리얼 끝나고 1일차 브리핑', (await qa()).p?.phase === 'brief')
 
-while (Date.now() - t0 < 420000) {
-  const s = await page.evaluate(() => ({ scene: window.__qa.scene, p: window.__qa.play }))
+const seen = { brief: 0, briefStill: true, guide: 0, feedback: 0, feedbackStill: true, rejudged: false, results: 0, letters: [] }
+const wrongAt = new Set([2, 20, 33]) // 이 번째 판정은 일부러 틀린다
+let lastKey = ''
+const t0 = Date.now()
+while (Date.now() - t0 < 300000) {
+  const s = await qa()
   if (s.scene === 'final') break
   const p = s.p
   if (!p) { await wait(100); continue }
-  if (p.help) seen.help = true
-  if (p.phase === 'intro') { await shot(`intro${p.stage}`); await wait(200); continue }
+  if (p.phase === 'brief') {
+    seen.brief++
+    const a = s.t
+    await wait(500)
+    if ((await qa()).t !== a) seen.briefStill = false
+    await shot(`brief${p.stage}`)
+    await page.click('.brief [data-act="go"]', { force: true })
+    await wait(700)
+    continue
+  }
   if (p.phase === 'guide') {
     const key = `g${p.stage}-${p.guide}`
-    if (key !== lastCardKey) {
-      lastCardKey = key
-      seen.guide++
-      await wait(450)
-      await shot(`guide${p.stage}_${p.guide}`)
-      // 한 번은 일부러 반대로 밀어 되돌아오는지 본다
-      if (seen.guide === 2) {
-        await page.keyboard.press(p.clue === 'none' ? 'ArrowLeft' : 'ArrowRight')
-        await wait(500)
-        const still = await page.evaluate(() => window.__qa.play.phase)
-        check('안내 카드는 틀린 방향이면 넘어가지 않는다', still === 'guide')
-      }
-      await page.keyboard.press(p.clue === 'none' ? 'ArrowRight' : 'ArrowLeft')
-    }
-    await wait(150)
+    if (key !== lastKey) { lastKey = key; seen.guide++; await wait(700); await shot(`guide${p.stage}_${p.guide}`) }
+    await page.keyboard.press(p.clue === 'none' ? 'ArrowRight' : 'ArrowLeft')
+    await wait(1000)
+    continue
+  }
+  if (p.phase === 'feedback') {
+    seen.feedback++
+    const a = s.t
+    await wait(500)
+    if ((await qa()).t !== a) seen.feedbackStill = false
+    if (seen.feedback === 1) await shot('feedback')
+    await page.click('.why [data-act="ok"]', { force: true })
+    await wait(500)
     continue
   }
   if (p.phase === 'msg') {
     await wait(400)
-    await shot('forced_msg')
+    await shot('ai_msg')
     await page.click('[data-act="again"]', { force: true })
     seen.rejudged = true
     await wait(500)
@@ -74,59 +97,43 @@ while (Date.now() - t0 < 420000) {
   }
   if (p.phase === 'result') {
     seen.results++
-    await wait(900)
+    await wait(1000)
+    seen.letters.push(await page.$$eval('.letter', (e) => e.length))
     await shot(`result${p.stage}`)
-    await page.click('[data-act="next"]', { force: true })
-    await wait(400)
+    await page.click('.result [data-act="next"]', { force: true })
+    await wait(600)
     continue
   }
-  if (p.phase !== 'card') { await wait(80); continue }
-  const key = `c${p.stage}-${p.judged}-${p.clue}-${p.scanned}`
-  if (key === lastCardKey) { await wait(80); continue }
-  lastCardKey = key
-  await wait(380)
-  const fresh = await page.evaluate(() => window.__qa.play)
-  if (fresh.phase !== 'card') continue
-  if (!seen.clues.has(`${fresh.stage}-${fresh.clue}`)) {
-    seen.clues.add(`${fresh.stage}-${fresh.clue}`)
-    await shot(`card${fresh.stage}_${fresh.clue}`)
-  }
-  if (fresh.forced && !fresh.scanned) {
-    seen.forced = true
-    await shot('forced_wait')
-    await page.keyboard.press('s')
-    await wait(900)
-    await shot('forced_scanned')
-    await page.keyboard.press('ArrowLeft') // 틀린 힌트를 따라가 본다
+  if (p.phase === 'card') {
+    if (p.forced && !p.scanned) { await page.click('[data-act="scan"]', { force: true }); await wait(600); continue }
+    // 강제 스캔 카드는 틀린 AI 힌트를 일부러 따라 다시 판정 장면을 본다
+    if (p.forced && p.hintWrong && !seen.rejudged) { await page.keyboard.press('ArrowLeft'); await wait(900); continue }
+    // 하트가 하나 남았을 때는 틀리지 않는다(게임 오버는 gameover-check 가 따로 본다)
+    const wrong = wrongAt.has(p.judged) && p.hearts > 1
+    if (wrong) wrongAt.delete(p.judged)
+    await page.keyboard.press((p.clue === 'none') !== wrong ? 'ArrowRight' : 'ArrowLeft')
+    await wait(260)
     continue
   }
-  if (fresh.stage === 1 && !seen.scanned && fresh.clue !== 'none') {
-    seen.scanned = true
-    await page.keyboard.press('s')
-    await wait(1100)
-    await shot('scan_stage1')
-  }
-  const correct = fresh.clue === 'none' ? 'ArrowRight' : 'ArrowLeft'
-  const wrong = correct === 'ArrowRight' ? 'ArrowLeft' : 'ArrowRight'
-  let k = correct
-  if (wrongPlan[fresh.stage] > 0 && !fresh.scanned) { wrongPlan[fresh.stage]--; k = wrong }
-  await page.keyboard.press(k)
-  if (k === wrong && !shots.has(`wrong${fresh.stage}`)) { await wait(500); await shot(`wrong${fresh.stage}`) }
-  else await wait(150)
+  await wait(100)
 }
-
-await wait(3500)
-await page.screenshot({ path: path.join(outDir, 'final.png') })
-const fin = await page.evaluate(() => ({ final: window.__qa.final, play: window.__qa.play }))
-check('최종 결과 화면 도착', !!fin.final, JSON.stringify(fin.final))
-check('단계 결과 세 번', seen.results === 3, String(seen.results))
-check('안내 카드 일곱 장(1단계 2, 2단계 2, 3단계 2와 함정 1)', seen.guide === 7, String(seen.guide))
-check('2단계 강제 스캔 장면', seen.forced)
-check('틀린 힌트 뒤 다시 판정', seen.rejudged)
-check('하트를 다 잃으면 도움 모드', seen.help)
-check('별 기록 세 단계', fin.play && fin.play.stars.length === 3, JSON.stringify(fin.play && fin.play.stars))
-console.log('본 단서', [...seen.clues].join(' '), '판정', fin.play.judged, '정답', fin.play.correct, '점수', fin.play.score)
-check('콘솔 오류 0', errors.length === 0, errors.slice(0, 5).join(' | '))
+await wait(2500)
+await shot('final')
+const fin = await page.evaluate(() => window.__qa.final)
+check('브리핑 세 번', seen.brief === 3, String(seen.brief))
+check('브리핑 동안 시간 멈춤', seen.briefStill)
+check('시범 카드(1일차 연습했으면 2, 3일차만)', seen.guide >= 4, String(seen.guide))
+check('틀렸을 때 이유 상자', seen.feedback >= 2, String(seen.feedback))
+check('이유 상자 동안 시간 멈춤', seen.feedbackStill)
+check('강제 스캔 뒤 다시 판정', seen.rejudged)
+check('하루 정산 세 번', seen.results === 3, String(seen.results))
+check('정산마다 편지', seen.letters.length === 3 && seen.letters.every((n) => n >= 1 && n <= 3), JSON.stringify(seen.letters))
+check('최종 결과', !!fin, JSON.stringify(fin))
+await page.click('[data-act="dex"]', { force: true })
+await wait(400)
+const pages = await page.$$eval('.note-tab:not(.locked)', (e) => e.length)
+check('수첩이 채워짐', pages >= 9, String(pages))
+check('콘솔 오류 0', errors.length === 0, errors.slice(0, 3).join(' | '))
 await browser.close()
 console.log(failures === 0 ? '\n전체 통과' : `\n실패 ${failures}건`)
 process.exit(failures === 0 ? 0 : 1)
