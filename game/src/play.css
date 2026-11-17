@@ -696,15 +696,26 @@
     opacity: 0;
   }
 }
+/* 바닥 그림자는 가운데에서 바깥으로 흐려지게 그려 원판처럼 보이지 않게 한다 */
 .narumi-spot .shadow,
 .dari-spot .shadow {
   position: absolute;
+  border-radius: 50%;
+}
+.narumi-spot .shadow {
   left: 14%;
   right: 14%;
   bottom: -8px;
   height: 28px;
-  border-radius: 50%;
-  background: rgba(30, 45, 74, 0.25);
+  background: radial-gradient(closest-side, rgba(30, 45, 74, 0.34), rgba(30, 45, 74, 0));
+}
+/* 창틀 위 달이는 몸 폭에 맞춘 작고 얇은 그림자를 발바닥 바로 아래에 둔다 */
+.dari-spot .shadow {
+  left: 26%;
+  right: 26%;
+  bottom: 9px;
+  height: 16px;
+  background: radial-gradient(closest-side, rgba(30, 45, 74, 0.42), rgba(30, 45, 74, 0.14) 60%, rgba(30, 45, 74, 0));
 }
 .sprite {
   position: relative;
