@@ -153,5 +153,6 @@ export function showCredits(root: HTMLElement): void {
       </dl>
       <p class="c-note">등장 업체와 금액은 모두 가상이며 실제 기업과 관계가 없습니다. 게임은 실제 조달 절차를 쉽게 줄여 보여 줍니다.
         실제로는 여러 서류와 점수를 함께 보고, 담합은 가격 말고도 여러 증거로 조사합니다. 게임 점수와 우대 마크 점수는 실제 심사 점수와 다릅니다.</p>
+      <img class="pps-logo" src="assets/img/pps_logo.webp" alt="조달청" width="500" height="192" />
     </div>`, 'credits-ov')
 }

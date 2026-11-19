@@ -9,6 +9,7 @@ const all = new Set<string>([
   'favicon.png',
   'assets/img/bg_title.webp',
   'assets/img/bg_game.webp',
+  'assets/img/pps_logo.webp',
   'assets/img/ladder.webp',
   'assets/img/stamp_pass.webp',
   'assets/img/stamp_check.webp',

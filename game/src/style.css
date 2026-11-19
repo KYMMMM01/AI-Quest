@@ -658,6 +658,14 @@ input[type='range']::-moz-range-thumb {
   font-weight: 900;
   color: var(--blue-d);
 }
+/* 조달청 로고: 공모전 에셋의 공식 가로형 로고. 모양과 색은 그대로 두고 자리마다 높이만 정한다 */
+.pps-logo {
+  display: block;
+  width: auto;
+}
+.loading .pps-logo {
+  height: 88px;
+}
 .loading .bar {
   width: 800px;
   height: 48px;
@@ -769,6 +777,10 @@ input[type='range']::-moz-range-thumb {
   color: #fff;
   font-size: var(--t-s);
   font-weight: 900;
+}
+.sign .pps-logo {
+  height: 52px;
+  margin: 0 auto 14px;
 }
 .logo-svg {
   display: block;
@@ -1245,6 +1257,10 @@ input[type='range']::-moz-range-thumb {
 .credits .c-note {
   font-size: var(--t-s);
   color: var(--ink-soft);
+}
+.credits .pps-logo {
+  height: 56px;
+  margin: 24px auto 0;
 }
 
 /* --- 일시정지 --- */
