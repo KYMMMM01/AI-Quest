@@ -39,6 +39,7 @@ function btn(el: HTMLElement, act: string): HTMLButtonElement {
 
 function showLoading(): { fill: HTMLElement; ready: () => Promise<void> } {
   const el = h(`<section class="scene loading">
+    <img class="pps-logo" src="assets/img/pps_logo.webp" alt="조달청" width="500" height="192" />
     <p class="mini-logo">나르미의 입찰 도장</p>
     <div class="bar"><div class="fill"></div></div>
     <p class="tip">나르미가 오늘의 서류를 챙기고 있어요</p>
@@ -82,6 +83,7 @@ function showTitle(): void {
     <div class="hang">
       <div class="chains"><i class="chain" style="left:90px;top:0;height:84px"></i><i class="chain" style="right:90px;top:0;height:84px"></i></div>
       <div class="sign">
+        <img class="pps-logo" src="assets/img/pps_logo.webp" alt="조달청" width="500" height="192" />
         <span class="badge">2026 조달청 AI 게임 콘텐츠 공모전 출품작</span>
         ${LOGO_SVG}
       </div>
