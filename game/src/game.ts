@@ -195,7 +195,6 @@ export function startGame(o: GameOptions): () => void {
   const timers: { t: number; fn: () => void }[] = []
   const after = (ms: number, fn: () => void) => timers.push({ t: ms, fn })
   const maxHearts = () => (easy ? 5 : 3)
-  const isGuide = () => card?.guide !== undefined
 
   const updateQa = () => {
     o.qa.play = {
@@ -572,7 +571,7 @@ export function startGame(o: GameOptions): () => void {
     const correct = (c.clue === 'none') === (dir === 'pass')
     phase = 'judging'
     drawButtons()
-    stamp(ic, dir)
+    stamp(ic, dir, correct)
 
     // 틀린 AI 힌트를 따라 정밀 확인: 하트는 그대로, 다시 판정
     if (c.forced && c.scanned?.wrong && dir === 'check' && !c.rejudge) {
@@ -728,10 +727,12 @@ export function startGame(o: GameOptions): () => void {
     heartsEl.querySelectorAll('span')[hearts]?.classList.add('break')
   }
 
-  function stamp(ic: HTMLElement, dir: Dir): void {
+  // 틀리면 누른 쪽과 상관없이 빨간 가위표(맞을 때의 초록 고리, 주황 돋보기와 같은 찰흙 그림)를 찍는다
+  function stamp(ic: HTMLElement, dir: Dir, ok = true): void {
     audio.play('stamp')
     narumi.play('narumi_stamp')
-    ic.append(h(`<img class="imprint ${dir}" src="assets/img/${dir === 'pass' ? 'stamp_pass' : 'stamp_check'}.webp" alt="" />`))
+    const kind = ok ? dir : 'wrong'
+    ic.append(h(`<img class="imprint ${kind}" src="assets/img/stamp_${kind}.webp" alt="" />`))
   }
   function exitCard(ic: HTMLElement, dir: Dir): void {
     after(320, () => {
@@ -885,12 +886,11 @@ export function startGame(o: GameOptions): () => void {
       if (bubbleT <= 0) bubble.hidden = true
     }
     const forcedWait = phase === 'card' && !!card?.forced && !card.scanned
-    const flowing = (phase === 'card' || (phase === 'judging' && !isGuide())) && !forcedWait && !o.demo
+    // 브리핑을 닫으면 바로 시간이 흐른다. 규칙을 알려 주는 시범 카드도 하루 시간에 든다
+    const flowing = (phase === 'card' || phase === 'guide' || phase === 'judging') && !forcedWait && !o.demo
     if (flowing) timeLeft = Math.max(0, timeLeft - dt)
-    if (phase === 'card') {
-      cardElapsed += dt
-      if (timeLeft <= 0 && !o.demo) endStage()
-    }
+    if (phase === 'card') cardElapsed += dt
+    if ((phase === 'card' || phase === 'guide') && timeLeft <= 0 && !o.demo) endStage()
     timeNum.textContent = timeLeft >= 10000 ? String(Math.ceil(timeLeft / 1000)) : (timeLeft / 1000).toFixed(1)
     timeBar.style.transform = `scaleX(${timeLeft / (daySeconds() * 1000)})`
     timeChip.classList.toggle('low', timeLeft < 10000)
@@ -1273,6 +1273,8 @@ export function startGame(o: GameOptions): () => void {
 
   function dispose(): void {
     stop()
+    // 수첩을 연 채 일시정지에서 타이틀로 나가면 수첩 멈춤이 남아 타이틀 캐릭터까지 멈추므로 여기서 푼다
+    clock.resume('note')
     narumi.dispose()
     dari.dispose()
     window.removeEventListener('keydown', onKey)
