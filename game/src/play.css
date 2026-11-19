@@ -541,15 +541,20 @@
   bottom: 8px;
   width: 190px;
   z-index: 3;
+  --tilt: -8deg;
   animation: imprint 0.25s ease-out both;
+}
+/* 가위표는 기울이면 X 가 돌아간 것처럼 보여서 반듯하게 찍는다 */
+.imprint.wrong {
+  --tilt: 0deg;
 }
 @keyframes imprint {
   from {
-    transform: scale(1.8) rotate(-8deg);
+    transform: scale(1.8) rotate(var(--tilt));
     opacity: 0;
   }
   to {
-    transform: rotate(-8deg);
+    transform: rotate(var(--tilt));
   }
 }
 .ring {

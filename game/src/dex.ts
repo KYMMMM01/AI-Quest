@@ -87,24 +87,49 @@ export function showDex(root: HTMLElement, onClose?: () => void, focus?: string)
       <div class="leaf right"><article class="note-page"></article></div>
     </div>`, 'dex', onClose)
   const page = el.querySelector('.note-page') as HTMLElement
+  const note = el.querySelector('.note') as HTMLElement
+  const index = el.querySelector('.leaf.left') as HTMLElement
+  const html = (id?: string) => {
+    const d = DEX.find((x) => x.id === id)
+    if (!d || !opened.has(d.id)) return `<div class="note-empty"><b>아직 빈 쪽이에요</b><p>게임에서 처음 만나면 나르미가 적어 둬요.</p></div>`
+    return `<img src="${d.pic}" alt="" /><h3>${d.title}</h3><p class="n-rule">${d.rule}</p><p>${d.easy}</p>
+      <div class="n-real"><b>실제 조달청은</b><p>${d.real}</p><small>출처: ${d.src}</small></div>`
+  }
+  const fill = (id?: string) => {
+    page.innerHTML = html(id)
+    page.scrollTop = 0
+  }
   let shown: string | undefined
+  let turn: HTMLElement | null = null
   const show = (id?: string) => {
-    if (shown !== undefined && id !== shown) {
-      // 오른쪽 쪽이 왼쪽 접힌 곳을 축으로 넘어간다
-      page.classList.remove('flip')
-      void page.offsetWidth
-      page.classList.add('flip')
-      audio.play('page')
-    }
+    const prev = shown
     shown = id
     el.querySelectorAll('.note-tab').forEach((b) => b.classList.toggle('on', (b as HTMLElement).dataset.id === id))
-    const d = DEX.find((x) => x.id === id)
-    if (!d || !opened.has(d.id)) {
-      page.innerHTML = `<div class="note-empty"><b>아직 빈 쪽이에요</b><p>게임에서 처음 만나면 나르미가 적어 둬요.</p></div>`
+    // 넘기던 쪽이 있으면 바로 끝낸다
+    if (turn) {
+      turn.remove()
+      turn = null
+      fill(prev)
+    }
+    if (prev === undefined || id === prev || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      fill(id)
       return
     }
-    page.innerHTML = `<img src="${d.pic}" alt="" /><h3>${d.title}</h3><p class="n-rule">${d.rule}</p><p>${d.easy}</p>
-      <div class="n-real"><b>실제 조달청은</b><p>${d.real}</p><small>출처: ${d.src}</small></div>`
+    // 책장 넘김(style.css 의 .turn): 뒤 차례로 가면 지금 쪽이 들려 왼쪽으로 넘어가며 새 쪽이 드러나고,
+    // 앞 차례로 가면 왼쪽에서 새 쪽이 넘어와 지금 쪽을 덮는다. 장의 뒷면은 차례 쪽과 똑같이 그려 왼쪽에 겹칠 때 이음새가 없다.
+    // 넘어가는 장은 그림일 뿐이라 inert 로 눌리거나 키보드, 화면 읽기에 잡히지 않게 한다
+    audio.play('page')
+    const fwd = DEX.findIndex((x) => x.id === id) > DEX.findIndex((x) => x.id === prev)
+    const leaf = h(`<div class="turn ${fwd ? 'fwd' : 'bwd'}" inert><div class="face leaf right"><article class="note-page">${fwd ? page.innerHTML : html(id)}</article></div><div class="face back leaf left">${index.innerHTML}</div></div>`)
+    note.append(leaf)
+    turn = leaf
+    if (fwd) fill(id)
+    leaf.addEventListener('animationend', () => {
+      if (turn !== leaf) return
+      if (!fwd) fill(id)
+      leaf.remove()
+      turn = null
+    }, { once: true })
   }
   el.querySelectorAll<HTMLButtonElement>('.note-tab').forEach((b) => (b.onclick = () => show(b.dataset.id)))
   show(first)

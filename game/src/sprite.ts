@@ -11,11 +11,13 @@ export class Sprite {
   private onEnd: (() => void) | null = null
   private readonly back: ClipName
   private readonly stop: () => void
+  private readonly k: number // 칸 픽셀을 화면 픽셀로 바꾸는 배율(한 캐릭터의 동작은 칸 높이가 모두 같다)
 
   constructor(idle: ClipName, height: number) {
     this.back = idle
     this.clip = idle
     const c = SPRITES[idle]
+    this.k = height / c.h
     this.el = document.createElement('div')
     this.el.className = 'sprite'
     this.el.style.height = `${height}px`
@@ -49,6 +51,9 @@ export class Sprite {
   private frame(i: number): void {
     const c = SPRITES[this.clip]
     this.el.style.backgroundPosition = `${c.n > 1 ? (i / (c.n - 1)) * 100 : 0}% 0`
+    // 발이 바닥에 붙어 있어야 하는 동작은 칸마다 적힌 만큼 옮겨 발바닥을 그림자 위에 고정한다(pack_sprites.py 의 foot)
+    const off = 'foot' in c ? c.foot[i] : 0
+    this.el.style.translate = off ? `0 ${off * this.k}px` : ''
   }
 
   private tick(dt: number): void {

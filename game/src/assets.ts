@@ -12,6 +12,7 @@ const all = new Set<string>([
   'assets/img/ladder.webp',
   'assets/img/stamp_pass.webp',
   'assets/img/stamp_check.webp',
+  'assets/img/stamp_wrong.webp',
   'assets/img/tray_investigate.webp',
   ...Object.values(SPRITES).map((s) => s.src),
   ...D.COMPANIES.map((c) => c.logo),

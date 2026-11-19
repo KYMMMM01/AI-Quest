@@ -836,6 +836,10 @@ input[type='range']::-moz-range-thumb {
   border-radius: 50%;
   background: radial-gradient(closest-side, rgba(30, 45, 74, 0.42), rgba(30, 45, 74, 0.14) 60%, rgba(30, 45, 74, 0));
 }
+/* 달이 동작 칸은 발밑 여백이 커서(슬퍼하기 때 가라앉는 만큼) 그림자를 발 높이까지 올린다 */
+.cast .actor.dari::before {
+  bottom: 7px;
+}
 .cast .sprite {
   position: relative;
 }
@@ -1016,6 +1020,7 @@ input[type='range']::-moz-range-thumb {
 .note {
   flex: 1;
   min-height: 0;
+  position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr;
   perspective: 2400px;
@@ -1098,23 +1103,67 @@ input[type='range']::-moz-range-thumb {
   box-sizing: border-box;
   padding: 40px 48px;
   overflow-y: auto;
+  /* 쪽을 넘길 때 스크롤바가 함께 돌아 보이지 않게 숨긴다(내용은 그림 높이를 맞춰 모든 쪽이 한 화면에 들어간다) */
+  scrollbar-width: none;
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+.note-page::-webkit-scrollbar {
+  display: none;
+}
+/* 책장 넘김(dex.ts 의 show): 오른쪽 쪽과 같은 크기의 한 장이 책등(왼쪽 끝)을 축으로 돈다.
+   앞면은 오른쪽 쪽, 뒷면은 차례 쪽이라 다 넘어가면 그 자리의 차례와 겹쳐 보인다 */
+.turn {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 50%;
   transform-origin: 0 50%;
+  transform-style: preserve-3d;
+  pointer-events: none;
+  animation: turn-fwd 0.6s ease-in-out both;
+}
+/* 앞 차례로 갈 때는 같은 움직임을 거꾸로 돌린다(왼쪽에서 넘어와 오른쪽에 내려앉는다) */
+.turn.bwd {
+  animation-direction: reverse;
+}
+.turn .face {
+  position: absolute;
+  inset: 0;
   backface-visibility: hidden;
 }
-.note-page.flip {
-  animation: page-flip 0.45s ease-out both;
+.turn .back {
+  transform: rotateY(180deg);
 }
-@keyframes page-flip {
+/* 장이 세워질수록 빛을 덜 받아 어두워진다 */
+.turn .face::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(30, 45, 74, 0.3);
+  animation: turn-shade 0.6s ease-in-out both;
+}
+@keyframes turn-fwd {
   from {
-    transform: rotateY(-75deg);
-    filter: brightness(0.8);
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(-180deg);
+  }
+}
+@keyframes turn-shade {
+  from,
+  to {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
   }
 }
 .note-page img {
-  height: 240px;
+  height: 210px;
   max-width: 100%;
   align-self: flex-start;
   object-fit: contain;
