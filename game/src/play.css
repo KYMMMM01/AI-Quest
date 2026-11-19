@@ -25,6 +25,7 @@
   color: #fff;
 }
 .chip.timer {
+  position: relative;
   gap: 12px;
   padding-right: 24px;
 }
@@ -59,6 +60,38 @@
 }
 .chip.timer.low .tbar i {
   background: var(--red);
+}
+/* 시범 판 동안 시계는 숫자와 막대 대신 "시범 중"을 보인다(칩 크기는 그대로) */
+.chip.timer .hold {
+  display: none;
+  position: absolute;
+  left: 64px;
+  right: 16px;
+  top: 0;
+  bottom: 0;
+  align-items: center;
+  justify-content: center;
+}
+.play.guiding .chip.timer {
+  background: #fff1b8;
+}
+.play.guiding .chip.timer .num,
+.play.guiding .chip.timer .tbar {
+  visibility: hidden;
+}
+.play.guiding .chip.timer .hold {
+  display: flex;
+}
+.chip.timer.go {
+  /* 왼쪽 날짜 칩에 닿지 않게 오른쪽으로만 커진다 */
+  transform-origin: 0 50%;
+  animation: timer-go 0.6s var(--ease);
+}
+@keyframes timer-go {
+  40% {
+    transform: scale(1.1);
+    background: #d9f5e3;
+  }
 }
 .chip.score b {
   min-width: 96px;
@@ -349,6 +382,101 @@
   50% {
     transform: scale(1.12);
   }
+}
+
+/* --- 시범 판: 기관 칸 자리에 노란 띠를 건다. 본 심사는 가운데 "심사 시작" 도장으로 연다 --- */
+.guide-band {
+  position: absolute;
+  left: 600px;
+  width: 720px;
+  top: 128px;
+  height: var(--h-s);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  box-sizing: border-box;
+  border: var(--line) solid var(--ink);
+  border-radius: 16px;
+  background: #fff1b8;
+  box-shadow: 0 6px 0 var(--ink);
+  font-size: var(--t-s);
+  font-weight: 900;
+  white-space: nowrap;
+}
+.guide-band b {
+  padding: 4px 14px;
+  border-radius: 10px;
+  background: var(--ink);
+  color: var(--yellow);
+}
+.play.guiding .guide-band {
+  display: flex;
+  animation: toast 0.25s var(--ease) both;
+}
+.play.guiding .agencies {
+  visibility: hidden;
+}
+.go-stamp {
+  position: absolute;
+  left: 960px;
+  top: 544px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 144px;
+  padding: 0 72px;
+  box-sizing: border-box;
+  border: var(--line) solid var(--ink);
+  border-radius: var(--r-lg);
+  background: var(--green);
+  color: #fff;
+  font-size: var(--t-xl);
+  font-weight: 900;
+  white-space: nowrap;
+  box-shadow: 0 var(--drop) 0 var(--ink);
+  pointer-events: none;
+  z-index: 9;
+  /* 움직임 줄이기 설정에서 애니메이션이 빠져도 가운데에 놓인다 */
+  transform: translate(-50%, -50%);
+  animation: go-stamp 1s both;
+}
+.go-stamp svg {
+  width: 56px;
+  height: 56px;
+}
+@keyframes go-stamp {
+  0% {
+    transform: translate(-50%, -50%) scale(1.9);
+    opacity: 0;
+  }
+  17% {
+    transform: translate(-50%, -50%) scale(0.95);
+    opacity: 1;
+  }
+  25%,
+  80% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
+/* 시범 판 동안 배경과 점수, 하트를 어둡게 해 본 심사와 따로 보이게 한다. 수첩과 일시정지 버튼은 밝게 둔다 */
+.play .bg {
+  transition: filter 0.4s;
+}
+.play .hud-r .chip {
+  transition: opacity 0.4s;
+}
+.play.guiding .bg {
+  filter: brightness(0.55) saturate(0.75);
+}
+.play.guiding .chip.score,
+.play.guiding .chip.hearts {
+  opacity: 0.45;
 }
 .card-slot {
   position: absolute;
@@ -1537,6 +1665,14 @@ svg.links g path {
   top: 144px;
   left: 600px;
   width: 720px;
+}
+.compact .guide-band {
+  top: 144px;
+  font-size: 30px;
+}
+.compact .guide-band .gb-what {
+  /* 휴대폰은 글자가 커서 "시범 1/2"와 "시간은 멈춰 있어요"만 남긴다 */
+  display: none;
 }
 .compact .card-slot {
   top: 240px;

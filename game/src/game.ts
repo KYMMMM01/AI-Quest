@@ -11,7 +11,7 @@ import { prefs } from './settings'
 
 type Dir = 'pass' | 'check'
 type DemoAct = { cap?: string; wait: number; dir: Dir; scan?: number }
-type Phase = 'coach' | 'brief' | 'guide' | 'card' | 'judging' | 'feedback' | 'msg' | 'over' | 'result' | 'end'
+type Phase = 'coach' | 'brief' | 'guide' | 'start' | 'card' | 'judging' | 'feedback' | 'msg' | 'over' | 'result' | 'end'
 
 interface Card {
   id: number
@@ -122,7 +122,7 @@ export function startGame(o: GameOptions): () => void {
     <header class="hud">
       <div class="hud-l">
         <span class="chip day"><b class="dno"></b><span class="dtitle"></span></span>
-        <span class="chip timer">${ICON.clock}<span class="num">45</span><i class="tbar"><i></i></i></span>
+        <span class="chip timer">${ICON.clock}<span class="num">45</span><i class="tbar"><i></i></i><span class="hold">시범 중</span></span>
       </div>
       <div class="hud-r">
         <span class="chip score">점수 <b>0</b></span>
@@ -133,6 +133,7 @@ export function startGame(o: GameOptions): () => void {
     </header>
     <aside class="board panel"></aside>
     <div class="agencies"></div>
+    <div class="guide-band"><b></b><span class="gb-what"></span><span>시간은 멈춰 있어요</span></div>
     <div class="card-slot"></div>
     <div class="judge-row">
       <button class="btn orange judge" data-act="check">${ICON.left}<span>정밀 확인</span></button>
@@ -165,6 +166,8 @@ export function startGame(o: GameOptions): () => void {
   const pauseBtn = $<HTMLButtonElement>('[data-act="pause"]')
   const links = el.querySelector('svg.links') as SVGSVGElement
   const toasts = $('.toast-layer')
+  const bandTag = $('.guide-band b')
+  const bandWhat = $('.guide-band .gb-what')
   const narumi = new Sprite('narumi_idle', 470)
   $('.narumi-spot').append(narumi.el)
   const dari = new Sprite('dari_idle', 272)
@@ -191,6 +194,10 @@ export function startGame(o: GameOptions): () => void {
   // 그날 시작할 때의 전체 기록. 하트를 다 잃고 그날을 다시 할 때 되돌린다
   let dayStart = { score: 0, judged: 0, missed: 0, waited: 0, delivered: { ...run.delivered } }
   let skipGuides = false // 튜토리얼에서 연습한 날은 1일차 시범 카드를 건너뛴다
+  let guideTotal = 0 // 그날 시범 판의 카드 수(띠의 "시범 1/2")
+  let begun = false // 본 심사가 열렸는지. 시범 판이 끝나면 심사 시작 도장을 찍고 연다
+  let notePending = false // 수첩 알림은 시범 판의 띠를 가리지 않게 본 심사가 열릴 때 띄운다
+  let stampAnim: Animation | undefined // "심사 시작" 판의 애니메이션. 일시정지 동안 함께 멈추게 CSS 시간 대신 게임 시계로 돌린다
   let coachWait: ((d: Dir) => void) | null = null
   const timers: { t: number; fn: () => void }[] = []
   const after = (ms: number, fn: () => void) => timers.push({ t: ms, fn })
@@ -454,6 +461,9 @@ export function startGame(o: GameOptions): () => void {
       phase = 'coach'
     } else if (c.guide !== undefined) {
       phase = 'guide'
+      el.classList.add('guiding')
+      bandTag.textContent = c.trap ? '잠깐 시범' : `시범 ${guideTotal - guides.length}/${guideTotal}`
+      bandWhat.textContent = c.trap ? '함정 카드를 먼저 해 봐요.' : '새 규칙을 먼저 해 봐요.'
       const text = c.guide === 'none'
         ? '기준표와 서류가 같아요. 오른쪽으로 밀어 <b>통과</b>!'
         : c.trap ? '우대 마크가 있어도 기준과 다르면 정밀 확인해요' : D.RULES[c.guide as D.RuleId].guide
@@ -537,9 +547,11 @@ export function startGame(o: GameOptions): () => void {
       return present(e.card)
     }
     if (guides.length) return present(guideCard(guides.shift()!))
+    if (!begun) return begin()
     if (timeLeft <= 0) return endStage()
     if (def.no === 3 && !trapShown && daySeconds() * 1000 - timeLeft >= 20000) {
       trapShown = true
+      begun = false // 함정 시범 카드 동안 시간을 멈추고, 끝나면 "심사 계속" 도장으로 다시 연다
       const g = guideCard('safety')
       g.trap = true
       g.marks = ['green']
@@ -554,6 +566,38 @@ export function startGame(o: GameOptions): () => void {
     if (!notice || notice.idx >= notice.bidders.length || notice.state.includes('won')) notice = newBidNotice()
     notice.state[notice.idx] = 'now'
     present(notice.bidders[notice.idx])
+  }
+
+  // 본 심사 열기: 가운데에 "심사 시작" 도장을 찍고, 도장이 사라지면 첫 카드와 함께 시간이 흐른다
+  function begin(): void {
+    begun = true
+    phase = 'start'
+    drawButtons()
+    el.classList.remove('guiding')
+    board.querySelector('.order')?.remove() // 시범 카드용 임시 공고(주문서)는 도장과 함께 치우고, 첫 카드가 진짜 것을 그린다
+    const plate = h(`<div class="go-stamp">${ICON.play}${trapShown ? '심사 계속!' : '심사 시작!'}</div>`)
+    el.append(plate)
+    stampAnim = plate.getAnimations()[0] // 움직임 줄이기 설정이면 애니메이션이 없어 비어 있다
+    stampAnim?.pause()
+    // 휴대폰에서 말풍선이 달이에 닿지 않게 한 줄로 짧게 쓴다
+    say(trapShown ? '다시 시간이 흘러요' : '이제 진짜 심사예요!', 1800)
+    after(170, () => {
+      audio.play('stamp')
+      narumi.play('narumi_stamp')
+      timeChip.classList.add('go')
+    })
+    after(1000, () => {
+      stampAnim = undefined
+      plate.remove()
+      timeChip.classList.remove('go')
+      noteToast()
+      nextCard()
+    })
+    updateQa()
+  }
+  function noteToast(): void {
+    if (notePending) toast('규칙 수첩에 새 내용이 생겼어요', 'note', 1600)
+    notePending = false
   }
 
   // --- 판정 ---
@@ -875,22 +919,23 @@ export function startGame(o: GameOptions): () => void {
       o.onTitle()
     })
 
-  // --- 시간: 심사 중(card, judging)에만 하루 시간이 흐른다. 브리핑, 시범, 설명, 튜토리얼에서는 멈춘다 ---
+  // --- 시간: 본 심사(card, judging)에만 하루 시간이 흐른다. 브리핑, 시범 판, 심사 시작 도장, 설명, 튜토리얼에서는 멈춘다 ---
   const stop = clock.onTick((dt) => {
     for (let i = timers.length - 1; i >= 0; i--) {
       timers[i].t -= dt
       if (timers[i].t <= 0) timers.splice(i, 1)[0].fn()
     }
+    if (stampAnim) stampAnim.currentTime = Number(stampAnim.currentTime) + dt
     if (bubbleT > 0 && bubbleT < 900000) {
       bubbleT -= dt
       if (bubbleT <= 0) bubble.hidden = true
     }
     const forcedWait = phase === 'card' && !!card?.forced && !card.scanned
-    // 브리핑을 닫으면 바로 시간이 흐른다. 규칙을 알려 주는 시범 카드도 하루 시간에 든다
-    const flowing = (phase === 'card' || phase === 'guide' || phase === 'judging') && !forcedWait && !o.demo
+    // 시범 카드를 판정한 뒤(judging)도 아직 시범 판이라 멈춘다. 도장이 사라지고 첫 카드가 뜰 때부터 흐른다
+    const flowing = (phase === 'card' || (phase === 'judging' && begun)) && !forcedWait && !o.demo
     if (flowing) timeLeft = Math.max(0, timeLeft - dt)
     if (phase === 'card') cardElapsed += dt
-    if ((phase === 'card' || phase === 'guide') && timeLeft <= 0 && !o.demo) endStage()
+    if (phase === 'card' && timeLeft <= 0 && !o.demo) endStage()
     timeNum.textContent = timeLeft >= 10000 ? String(Math.ceil(timeLeft / 1000)) : (timeLeft / 1000).toFixed(1)
     timeBar.style.transform = `scaleX(${timeLeft / (daySeconds() * 1000)})`
     timeChip.classList.toggle('low', timeLeft < 10000)
@@ -1019,6 +1064,8 @@ export function startGame(o: GameOptions): () => void {
     card = null
     slot.innerHTML = ''
     guides = o.demo || (skipGuides && i === 0) ? [] : (i === 0 ? ['none' as D.Clue] : []).concat(def.rules)
+    guideTotal = guides.length
+    begun = false
     demoQ = o.demo ? buildDemo(def.no) : []
     dayNo.textContent = `${def.no}일차`
     dayTitle.textContent = def.title
@@ -1053,7 +1100,7 @@ export function startGame(o: GameOptions): () => void {
     const ov = h(`<div class="overlay brief"><div class="panel sheet">
       <div class="plate"><h2>${def.no}일차 출근 <small>${def.title}</small></h2></div>
       <div class="sheet-paper"><div class="sheet-body"><div class="br-top"><p class="br-fact">${def.fact}</p><div class="br-ag">${def.agencies.map((a) => `<span><img src="${D.AGENCIES[a].img}" alt="" />${D.AGENCIES[a].name}</span>`).join('')}</div></div>${extra}<p class="br-new">오늘의 새 규칙</p><div class="br-rules n${def.rules.length}">${rules}</div></div>
-      <div class="sheet-foot"><button class="btn green" data-act="go">${ICON.play}심사 시작</button></div></div>
+      <div class="sheet-foot"><button class="btn green" data-act="go">${ICON.play}${guides.length ? '시범 먼저 해 보기' : '심사 시작'}</button></div></div>
     </div></div>`)
     el.append(ov)
     audio.play('open')
@@ -1063,7 +1110,9 @@ export function startGame(o: GameOptions): () => void {
     const go = () => {
       audio.play('click')
       ov.remove()
-      if (added) toast('규칙 수첩에 새 내용이 생겼어요', 'note', 1600)
+      notePending = added > 0
+      // 시연은 도장 없이 바로 카드로 가므로 수첩 알림도 바로 띄운다
+      if (o.demo) noteToast()
       nextCard()
     }
     ;(ov.querySelector('[data-act="go"]') as HTMLButtonElement).onclick = go
