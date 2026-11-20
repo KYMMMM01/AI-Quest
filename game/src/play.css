@@ -1470,15 +1470,32 @@ svg.links g path {
   bottom: var(--edge);
   pointer-events: auto;
 }
-.coach .hand {
+/* 손가락 자리: 튜토리얼 손가락과 시연에서 카드를 끄는 손가락(.touch-dot)이 같은 흰 동그라미를 쓴다 */
+.coach .hand,
+.touch-dot {
   position: absolute;
-  left: 930px;
-  top: 560px;
   width: 64px;
   height: 64px;
   border: var(--line) solid var(--ink);
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.9);
+}
+.coach .hand {
+  left: 930px;
+  top: 560px;
+}
+.touch-dot {
+  /* 놓인 자리(left, top)가 동그라미 가운데가 되게 하고, 닿는 순간 작아지며 나타난다 */
+  margin: -36px 0 0 -36px;
+  z-index: 10;
+  pointer-events: none;
+  animation: touch-in 0.18s ease-out both;
+}
+@keyframes touch-in {
+  from {
+    scale: 1.6;
+    opacity: 0;
+  }
 }
 .coach .hand.pass {
   animation: hand-r 1.4s ease-in-out infinite;
