@@ -10,7 +10,8 @@ import { unlock, showDex, dexCount, DEX } from './dex'
 import { prefs } from './settings'
 
 type Dir = 'pass' | 'check'
-type DemoAct = { cap?: string; wait: number; dir: Dir; scan?: number }
+type DemoAct = { cap?: string; wait: number; dir: Dir; scan?: number; drag?: boolean } // drag: 버튼 대신 카드를 끌어 보낸다
+const DEMO_DRAG_MS = 700 // 시연에서 손가락 자리가 카드를 끌어 가는 시간
 type Phase = 'coach' | 'brief' | 'guide' | 'start' | 'card' | 'judging' | 'feedback' | 'msg' | 'over' | 'result' | 'end'
 
 interface Card {
@@ -497,7 +498,8 @@ export function startGame(o: GameOptions): () => void {
     }
     if (a.cap) caption(a.cap)
     if (a.scan !== undefined) after(a.scan, () => scan())
-    after(a.wait, () => judge(a.dir))
+    if (a.drag) after(a.wait - DEMO_DRAG_MS, () => demoDrag(a.dir))
+    else after(a.wait, () => judge(a.dir))
   }
   function buildDemo(no: number): { card: Card; notice?: Notice }[] {
     const co = (id: string) => D.COMPANIES.find((x) => x.id === id)!
@@ -511,16 +513,16 @@ export function startGame(o: GameOptions): () => void {
     }
     if (no === 1) return [
       ...bid('school', '소화기 구매', '소화기', it('ext').img, [
-        ['dog', 'none', D.OFFICES_OK[1], 1280000, 0, ['innovation'], { cap: '기준표와 사무실 사진을 맞춰 봐요', wait: 2200, dir: 'pass' }],
+        ['dog', 'none', D.OFFICES_OK[1], 1280000, 0, ['innovation'], { cap: '기준표와 사무실 사진을 맞춰 봐요', wait: 2200, dir: 'pass', drag: true }],
       ]),
       ...bid('fire', '구급상자 구매', '구급상자', it('firstaid').img, [
-        ['fox', 'ghost', D.OFFICES_EMPTY[0], 540000, 1, [], { cap: '사무실이 텅 비었어요. 기준과 달라요', wait: 2000, dir: 'check' }],
+        ['fox', 'ghost', D.OFFICES_EMPTY[0], 540000, 1, [], { cap: '사무실이 텅 비었어요. 기준과 달라요', wait: 2000, dir: 'check', drag: true }],
         ['panda', 'none', D.OFFICES_OK[3], 560000, 3, ['green'], { wait: 1300, dir: 'pass' }],
       ]),
     ]
     if (no === 2) {
       const a: Card = { id: ++cardNo, company: co('rabbit'), clue: 'box', trap: false, marks: [], photo: D.DELIVERY.school, what: '학생 의자',
-        item: it('chair').img, boxLogo: co('frog').logo, agency: 'school', demo: { cap: '상자의 회사가 계약 회사와 달라요', wait: 2000, dir: 'check' } }
+        item: it('chair').img, boxLogo: co('frog').logo, agency: 'school', demo: { cap: '틀리면 하트가 하나 줄어요', wait: 2000, dir: 'pass' } } // 일부러 놓쳐 하트가 깨지고 이유 상자가 뜨는 모습을 보인다
       const b: Card = { id: ++cardNo, company: co('bear'), clue: 'none', trap: false, marks: [], photo: D.DELIVERY.health, what: '소화기',
         item: it('ext').img, boxLogo: co('bear').logo, agency: 'health', forced: true, demo: { cap: '나르미도 가끔 잘못 봐요', scan: 900, wait: 2500, dir: 'check' } }
       return [{ card: a }, { card: b }]
@@ -647,7 +649,8 @@ export function startGame(o: GameOptions): () => void {
       toast('나르미가 잘못 본 곳을 찾아냈어요 +200', 'gold', 1800)
     }
 
-    if (!c.rejudge) record(c, correct, dir)
+    // 시연은 일부러 틀린 판정을 기록하지 않아(나르미 스캔이 틀린 장면처럼) 마지막이 해외 진출 칸으로 남는다
+    if (!c.rejudge && (correct || !o.demo)) record(c, correct, dir)
     if (correct) {
       combo++
       let gain = 100
@@ -671,8 +674,11 @@ export function startGame(o: GameOptions): () => void {
       after(110, () => audio.play('wrong'))
       after(150, () => dari.play('dari_sad'))
       after(200, () => narumi.play('narumi_no'))
-      if (dir === 'pass') run.missed.push(c.clue)
-      else run.waited++
+      // 시연은 위와 같이 놓친 규칙과 기다리게 한 회사도 세지 않는다
+      if (!o.demo) {
+        if (dir === 'pass') run.missed.push(c.clue)
+        else run.waited++
+      }
       after(350, () => explain(c, dir))
     }
     drawScore()
@@ -881,22 +887,54 @@ export function startGame(o: GameOptions): () => void {
     ic.addEventListener('pointermove', (e) => {
       if (e.pointerId !== id) return
       dx = (e.clientX - x0) / k()
-      ic.style.transform = `translateX(${dx}px) rotate(${dx / 30}deg)`
-      ic.style.setProperty('--pass', String(Math.max(0, Math.min(1, dx / 240))))
-      ic.style.setProperty('--check', String(Math.max(0, Math.min(1, -dx / 240))))
+      dragTo(ic, dx)
     })
     const end = (e: PointerEvent) => {
       if (e.pointerId !== id) return
       id = -1
-      ic.classList.remove('dragging')
-      const d = dx
-      ic.style.transform = ''
-      ic.style.setProperty('--pass', '0')
-      ic.style.setProperty('--check', '0')
-      if (Math.abs(d) > 200) judge(d > 0 ? 'pass' : 'check')
+      dragEnd(ic, dx)
     }
     ic.addEventListener('pointerup', end)
     ic.addEventListener('pointercancel', end)
+  }
+  // 끌린 만큼 카드를 옮기고 기울이며 판정 쪽 색을 비춘다. 손을 떼면 제자리로 돌아오고, 200px 넘게 밀었으면 그쪽으로 판정한다
+  // 손가락 끌기와 시연의 끌기(demoDrag)가 같이 쓴다
+  function dragTo(ic: HTMLElement, dx: number): void {
+    ic.style.transform = `translateX(${dx}px) rotate(${dx / 30}deg)`
+    ic.style.setProperty('--pass', String(Math.max(0, Math.min(1, dx / 240))))
+    ic.style.setProperty('--check', String(Math.max(0, Math.min(1, -dx / 240))))
+  }
+  function dragEnd(ic: HTMLElement, dx: number): void {
+    ic.classList.remove('dragging')
+    ic.style.transform = ''
+    ic.style.setProperty('--pass', '0')
+    ic.style.setProperty('--check', '0')
+    if (Math.abs(dx) > 200) judge(dx > 0 ? 'pass' : 'check')
+  }
+  // 시연: 버튼 말고 카드를 옆으로 밀어서도 보낼 수 있다는 것을, 손가락 자리(동그라미)가 카드를 끌어 보여 준다
+  // 게임 시계로 움직여 a.wait 에 손을 뗀다(판정 시각은 버튼 판정과 같다)
+  function demoDrag(dir: Dir): void {
+    const ic = inner()
+    if (!ic || phase !== 'card') return
+    const s = dir === 'pass' ? 1 : -1
+    const p = pos(ic)
+    const dot = h(`<div class="touch-dot" style="left:${p.x}px;top:${p.y + 90}px"></div>`)
+    el.append(dot)
+    ic.classList.add('dragging')
+    let t = 0
+    const off = clock.onTick((dt) => {
+      // 끌기 중에 장면을 나갔거나 방향키로 먼저 판정했으면 손가락만 거두고 판정은 하지 않는다(시계는 장면과 따로 돈다)
+      const stop = !el.isConnected || phase !== 'card'
+      t = stop ? DEMO_DRAG_MS : Math.min(DEMO_DRAG_MS, t + dt)
+      const q = t / DEMO_DRAG_MS
+      const dx = stop ? 0 : s * 280 * q * q * (3 - 2 * q) // 천천히 출발해 천천히 멈춘다
+      dragTo(ic, dx)
+      dot.style.transform = `translateX(${dx}px)`
+      if (t < DEMO_DRAG_MS) return
+      off()
+      dot.remove()
+      dragEnd(ic, dx)
+    })
   }
   const onKey = (e: KeyboardEvent) => {
     if (e.repeat || el.querySelector('.overlay')) return
@@ -932,7 +970,8 @@ export function startGame(o: GameOptions): () => void {
     }
     const forcedWait = phase === 'card' && !!card?.forced && !card.scanned
     // 시범 카드를 판정한 뒤(judging)도 아직 시범 판이라 멈춘다. 도장이 사라지고 첫 카드가 뜰 때부터 흐른다
-    const flowing = (phase === 'card' || (phase === 'judging' && begun)) && !forcedWait && !o.demo
+    // 시연도 실제처럼 흐르게 해 시계가 줄어드는 모습을 보인다(시간이 다 되어 끝나지는 않는다)
+    const flowing = (phase === 'card' || (phase === 'judging' && begun)) && !forcedWait
     if (flowing) timeLeft = Math.max(0, timeLeft - dt)
     if (phase === 'card') cardElapsed += dt
     if (phase === 'card' && timeLeft <= 0 && !o.demo) endStage()
@@ -1065,7 +1104,7 @@ export function startGame(o: GameOptions): () => void {
     slot.innerHTML = ''
     guides = o.demo || (skipGuides && i === 0) ? [] : (i === 0 ? ['none' as D.Clue] : []).concat(def.rules)
     guideTotal = guides.length
-    begun = false
+    begun = !!o.demo // 시연은 시범 판도 심사 시작 도장도 없이 바로 본 심사다
     demoQ = o.demo ? buildDemo(def.no) : []
     dayNo.textContent = `${def.no}일차`
     dayTitle.textContent = def.title
