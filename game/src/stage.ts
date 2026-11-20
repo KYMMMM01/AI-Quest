@@ -8,29 +8,43 @@ export const stageScale = (): number => scale
 export const onStageFit = (fn: () => void): void => void watchers.add(fn)
 
 // 전체 화면과 가로 고정을 요청한다. 손가락을 뗄 때(사용자 조작으로 인정될 때) 불러야 한다.
-// 전체 화면을 지원하지 않으면(아이폰 사파리 등) 아무 일도 없다. 가로 고정까지 되면 true
+// 전체 화면을 지원하지 않으면(아이폰 사파리 등) 아무 일도 없다. 가로 고정까지 되면 true.
+// 브라우저가 답을 주지 않아도 3초 뒤에는 false 로 끝내서, 안내를 다시 누를 수 있게 한다
 export function requestLandscape(): Promise<boolean> {
   const root = document.documentElement
   if (!root.requestFullscreen) return Promise.resolve(false)
   const orientation = screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> }
-  return (document.fullscreenElement ? Promise.resolve() : root.requestFullscreen({ navigationUI: 'hide' }))
+  const tried = (document.fullscreenElement ? Promise.resolve() : root.requestFullscreen({ navigationUI: 'hide' }))
     .then(() => orientation?.lock?.('landscape') ?? Promise.reject())
     .then(() => true, () => false)
+  return Promise.race([tried, new Promise<boolean>((done) => setTimeout(() => done(false), 3000))])
 }
 
 export function setupStage(stage: HTMLElement, notice: HTMLElement, onPortrait: (portrait: boolean) => void): void {
-  // 휴대폰에서 전체 화면과 방향 고정을 쓸 수 있으면 세로 안내를 누르는 것만으로 가로로 바꾼다. 가로 고정이 안 되면 원래 안내로 돌린다
+  // 휴대폰에서 전체 화면과 방향 고정을 쓸 수 있으면 세로 안내를 누르는 것만으로 가로로 바꾼다.
+  // 카카오톡 같은 앱 안 브라우저(안드로이드 WebView 는 브라우저 정보에 "; wv)" 가 붙는다)는 함수가 있어도 가로 고정을 받아 주지 않으므로
+  // 누르면 바뀐다고 약속하지 않고 처음 안내(가로로 돌려 주세요, 자동 회전)를 그대로 둔다
   const canLock = typeof (screen.orientation as ScreenOrientation & { lock?: unknown })?.lock === 'function'
-  if (matchMedia('(pointer: coarse)').matches && !!document.documentElement.requestFullscreen && canLock) {
-    const text = notice.querySelector('p') as HTMLElement
+  const ua = navigator.userAgent
+  const inApp = /; wv\)|KAKAOTALK/i.test(ua)
+  // 안 돌아갈 때 풀어야 하는 설정 이름. 아이폰과 아이패드(아이패드는 브라우저 정보에 Macintosh 로 나오기도 함)는 제어 센터의 화면 방향 잠금이다
+  const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)
+  const hint = ios ? '안 돌아가면 제어 센터에서 화면 방향 잠금을 꺼 주세요' : '안 돌아가면 화면 자동 회전을 켜 주세요'
+  const [text, sub] = notice.querySelectorAll('p')
+  sub.textContent = hint
+  if (matchMedia('(pointer: coarse)').matches && !!document.documentElement.requestFullscreen && canLock && !inApp) {
     text.textContent = '화면을 누르면 가로로 바뀌어요'
+    sub.textContent = '휴대폰을 가로로 돌려도 돼요'
     let busy = false // 빠르게 두 번 눌러도 요청은 한 번만
     notice.addEventListener('pointerup', () => {
       if (busy) return
       busy = true
       requestLandscape().then((ok) => {
         busy = false
-        if (!ok) text.textContent = '가로로 돌려 주세요'
+        if (ok) return
+        // 실패하면 처음과 다른 문구로, 직접 돌리는 방법을 알려 준다
+        text.textContent = '자동으로 바꾸지 못했어요. 휴대폰을 가로로 돌려 주세요'
+        sub.textContent = hint
       })
     })
   }
