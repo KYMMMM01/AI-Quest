@@ -1,5 +1,6 @@
 // --- 그림 미리 불러오기. 모두 디코딩한 뒤에 시작 버튼을 켠다 ---
 import { SPRITES } from './sprite-data'
+import { bake } from './sprite'
 import * as D from './data'
 
 // 게임에서 쓰는 모든 그림. 처음에 다 불러와 판정 중에 그림이 늦게 뜨지 않게 한다
@@ -39,7 +40,8 @@ export async function preloadImages(onProgress: (done: number, total: number) =>
       const img = new Image()
       img.src = src
       try {
-        await img.decode()
+        // 캐릭터 띠 그림은 칸마다 펼쳐 두므로(sprite.ts) 여기서 따로 디코딩하지 않는다
+        if (!(await bake(src, img))) await img.decode()
       } catch {
         failed.push(src)
       }

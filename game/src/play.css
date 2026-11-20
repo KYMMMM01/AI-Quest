@@ -851,8 +851,9 @@
   background: radial-gradient(closest-side, rgba(30, 45, 74, 0.42), rgba(30, 45, 74, 0.14) 60%, rgba(30, 45, 74, 0));
 }
 .sprite {
+  /* 캐릭터 캔버스(sprite.ts). 글자 줄에 놓이면 아래에 틈이 생겨 발이 그림자에서 뜨므로 블록으로 둔다 */
+  display: block;
   position: relative;
-  background-repeat: no-repeat;
 }
 .narumi-bubble {
   right: 48px;

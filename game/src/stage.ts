@@ -1,6 +1,11 @@
 // --- 1920x1080 고정 무대를 화면에 맞춰 늘리고 줄인다. 세로 화면이면 안내를 띄운다 ---
 export const STAGE_W = 1920
 export const STAGE_H = 1080
+let scale = 1
+const watchers = new Set<() => void>()
+// 무대 한 px 이 화면에서 몇 CSS px 인지와, 무대 크기가 바뀔 때 부를 함수(캐릭터 캔버스를 실제 화면 픽셀 크기로 다시 그린다, sprite.ts)
+export const stageScale = (): number => scale
+export const onStageFit = (fn: () => void): void => void watchers.add(fn)
 
 // 전체 화면과 가로 고정을 요청한다. 손가락을 뗄 때(사용자 조작으로 인정될 때) 불러야 한다.
 // 전체 화면을 지원하지 않으면(아이폰 사파리 등) 아무 일도 없다. 가로 고정까지 되면 true
@@ -34,9 +39,11 @@ export function setupStage(stage: HTMLElement, notice: HTMLElement, onPortrait: 
     const w = vv ? vv.width : window.innerWidth
     const h = vv ? vv.height : window.innerHeight
     const s = Math.min(w / STAGE_W, h / STAGE_H)
+    scale = s
     stage.style.transform = `translate(${(w - STAGE_W * s) / 2}px, ${(h - STAGE_H * s) / 2}px) scale(${s})`
     // 휴대폰처럼 무대가 0.6배보다 작게 줄면 글자와 버튼을 키우는 작은 화면 설정을 켠다(play.css 의 .compact)
     document.documentElement.classList.toggle('compact', s < 0.6)
+    watchers.forEach((fn) => fn())
     const portrait = h > w
     notice.hidden = !portrait
     onPortrait(portrait)
