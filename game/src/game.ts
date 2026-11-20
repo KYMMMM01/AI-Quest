@@ -1321,7 +1321,13 @@ export function startGame(o: GameOptions): () => void {
       </div>
     </section>`)
     o.root.replaceChildren(s)
-    const climber = new Sprite('dari_run', 154)
+    // 플레이 장면은 이제 화면에 없으니 그 시계 함수와 나르미, 달이를 멈춘다(최종 결과를 보는 동안 매 프레임 헛돌지 않게)
+    // dispose() 는 여기서 부르지 않는다. 이 함수는 시계의 타이머 줄을 도는 중에 불려서, 줄을 비우면 그 반복이 깨진다
+    stop()
+    narumi.dispose()
+    dari.dispose()
+    // 사다리를 오르는 달이. 다 오르면 환호하는 달이로 바꾼다. 장면을 떠나면 정리해 게임 시계에 남아 돌지 않게 한다
+    let climber = new Sprite('dari_run', 154)
     const cl = s.querySelector('.climber') as HTMLElement
     cl.append(climber.el)
     const place = (k: number) => {
@@ -1331,10 +1337,11 @@ export function startGame(o: GameOptions): () => void {
     place(0)
     let at = 0
     const climb = () => {
+      if (!s.isConnected) return // 다 오르기 전에 떠났으면 멈춘다(타이틀에서 팡파르가 울리지 않게)
       if (at >= level) {
         climber.dispose()
-        const fin = new Sprite('dari_cheer', 154)
-        cl.replaceChildren(fin.el)
+        climber = new Sprite('dari_cheer', 154)
+        cl.replaceChildren(climber.el)
         audio.play('fanfare')
         return
       }
@@ -1349,11 +1356,13 @@ export function startGame(o: GameOptions): () => void {
     o.qa.scene = 'final'
     ;(s.querySelector('[data-act="again"]') as HTMLButtonElement).onclick = () => {
       audio.play('click')
+      climber.dispose()
       dispose()
       startGame({ ...o, easy: prefs.easy, tutorial: false })
     }
     ;(s.querySelector('[data-act="home"]') as HTMLButtonElement).onclick = () => {
       audio.play('click')
+      climber.dispose()
       dispose()
       o.onTitle()
     }
