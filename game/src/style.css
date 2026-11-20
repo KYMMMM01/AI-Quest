@@ -103,12 +103,29 @@ body {
   position: fixed;
   inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 14px;
+  padding: 24px;
   background: #13203a;
   color: #fff;
   font-size: 28px;
+  text-align: center;
+  word-break: keep-all;
+  text-wrap: balance;
   z-index: 10;
+}
+/* 두 번째 줄(돌리는 방법)은 손가락으로 쓰는 기기에서만 보인다 */
+#rotate-notice .sub {
+  display: none;
+  font-size: 18px;
+  color: #b9c6e0;
+}
+@media (pointer: coarse) {
+  #rotate-notice .sub {
+    display: block;
+  }
 }
 #rotate-notice[hidden] {
   display: none;
